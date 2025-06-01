@@ -449,6 +449,7 @@
         let lastStats = { views: 0, likes: 0, shares: 0, comments: 0 };
         let intervalId;
  let musicAudio = null;
+ let isTabActive = true; // Flag to track tab visibility
         const API_BASE_URL = 'https://countik.com/api/videoinfo/';
         const ANIMATION_DURATION_MS = 500; 
         const REFRESH_INTERVAL_MS = 20000; // 20 seconds
@@ -636,16 +637,20 @@
             fetchVideoData().then(success => {
                 if (success && document.getElementById('statsContainer').style.display === 'block') {
                     updateProgressBar(); 
-                    intervalId = setInterval(async () => {
-                        const fetchSuccess = await fetchVideoData();
-                        if (fetchSuccess && intervalId) { // Ensure interval hasn't been cleared elsewhere
-                            updateProgressBar(); 
-                        } else if (!fetchSuccess) { // If fetch failed, stop the interval
-                            // Optionally stop interval on repeated failures or just let it try again
-                            // For now, it will keep trying and resetting progress bar if interval is still set
-                            updateProgressBar(); // Or hide it: document.getElementById('progressBarWrapper').style.display = 'none';
+                    // Clear any existing interval before setting a new one
+                    if (intervalId) clearInterval(intervalId);
+
+                    intervalId = setInterval(() => {
+                        if (isTabActive) { // Only fetch if the tab is active
+                            fetchVideoData().then(fetchSuccess => {
+                                if (fetchSuccess && intervalId) {
+                                    updateProgressBar();
+                                } else if (!fetchSuccess) {
+                                    updateProgressBar(); // Or hide it
+                                }
+                            });
                         }
-                    }, REFRESH_INTERVAL_MS);
+                    }, REFRESH_INTERVAL_MS); // Set interval to check and fetch
                 } else if (!success) {
                     const progressBarWrapper = document.getElementById('progressBarWrapper');
                     if (progressBarWrapper) progressBarWrapper.style.display = 'none';
@@ -793,6 +798,22 @@
             const days = Math.floor(hours / 24);
             return `${days} day${days === 1 ? '' : 's'}`;
         }
+
+        // --- Visibility Change Handling ---
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                // Tab is inactive
+                isTabActive = false;
+                // Optionally pause music if playing
+                if (musicAudio && !musicAudio.paused) {
+                    musicAudio.pause();
+                }
+            } else {
+                // Tab is active
+                isTabActive = true;
+                // The interval will automatically resume fetching on the next tick if it's running
+            }
+        });
     </script>
 </body>
 </html>
