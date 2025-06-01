@@ -1,638 +1,904 @@
-<!DOCTYPE html>
-<html lang="en">
+[⚠️ Suspicious Content] <!DOCTYPE html>
+<html lang="el">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚀 TikTok Turbo Stats 🎮 v2</title>
+    <title>🚀 TikTok Turbo Stats 🎮 v3</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp, setDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration and Initialization
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" /* ... other config */ };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let userId = null;
+        let isAuthReady = false;
+
+        // Firebase Authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("Authenticated user ID:", userId);
+            } else {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Firebase Authentication Error:", error);
+                    userId = crypto.randomUUID(); // Fallback
+                }
+            }
+            isAuthReady = true;
+            // If a video ID is already present, try to load its initial data
+            const videoIdInput = document.getElementById('videoId');
+            if (videoIdInput && videoIdInput.value) {
+                loadInitialData(videoIdInput.value);
+            }
+        });
+
+
+        // Global variables
+        let videoDetailsContainer, progressBar, progressBarFill, statsCheckInterval, musicAudio;
+        let currentVideoId = null;
+        let previousStats = {};
+        const charts = {}; // To store chart instances
+        const MAX_CHART_POINTS = 50; // Max data points to show on charts
+
+        // DOM Elements
+        const videoIdInput = document.getElementById('videoId');
+        const fetchButton = document.getElementById('fetchButton');
+        const autoCheckIntervalInput = document.getElementById('autoCheckInterval');
+        const startAutoCheckButton = document.getElementById('startAutoCheck');
+        const stopAutoCheckButton = document.getElementById('stopAutoCheck');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const closeMessageButton = document.getElementById('closeMessage');
+
+        // Event Listeners (will be attached after DOMContentLoaded)
+
+        function showMessage(message, type = 'info') {
+            messageText.textContent = message;
+            messageBox.className = `fixed top-5 right-5 p-4 rounded-lg shadow-xl text-white z-50 ${type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000);
+        }
+        
+        // Function to log events to Firestore
+        async function logEvent(videoId, eventType, fieldName, oldValue, newValue, details = {}) {
+            if (!isAuthReady || !db) {
+                console.warn("Firestore not ready, skipping log.");
+                return;
+            }
+            try {
+                const logData = {
+                    videoId: videoId,
+                    timestamp: serverTimestamp(),
+                    eventType: eventType, // "stat_change", "metadata_change"
+                    fieldName: fieldName, // "views", "likes", "title", etc.
+                    oldValue: oldValue,
+                    newValue: newValue,
+                    userId: userId, // Optional: associate log with user
+                    appId: appId,   // Optional: associate log with app instance
+                    ...details
+                };
+                
+                const logsCollectionPath = `artifacts/${appId}/public/data/tiktokVideoLogs`;
+                await addDoc(collection(db, logsCollectionPath), logData);
+                console.log("Event logged:", logData);
+            } catch (error) {
+                console.error("Error logging event to Firestore:", error);
+                showMessage(`Σφάλμα καταγραφής ιστορικού: ${error.message}`, 'error');
+            }
+        }
+
+        // Function to save current stats snapshot to Firestore
+        async function saveStatsSnapshot(videoId, stats) {
+            if (!isAuthReady || !db) {
+                console.warn("Firestore not ready, skipping snapshot save.");
+                return;
+            }
+            try {
+                const snapshotData = {
+                    videoId: videoId,
+                    timestamp: serverTimestamp(),
+                    views: stats.play_count || 0,
+                    likes: stats.digg_count || 0,
+                    comments: stats.comment_count || 0,
+                    shares: stats.share_count || 0,
+                    saves: stats.collect_count || 0, // Assuming collect_count is saves/favorites
+                    title: stats.title || '',
+                    authorName: stats.author ? stats.author.nickname : '',
+                    userId: userId,
+                    appId: appId
+                };
+                const snapshotsCollectionPath = `artifacts/${appId}/public/data/tiktokVideoStatsSnapshots`;
+                // Using videoId and timestamp for a more complex ID, or just auto-ID. Let's use auto-ID.
+                await addDoc(collection(db, snapshotsCollectionPath), snapshotData);
+                console.log("Stats snapshot saved:", snapshotData);
+            } catch (error) {
+                console.error("Error saving stats snapshot to Firestore:", error);
+                showMessage(`Σφάλμα αποθήκευσης στιγμιότυπου: ${error.message}`, 'error');
+            }
+        }
+        
+        // Function to load and display history logs
+        async function loadAndDisplayHistory(videoId) {
+            if (!isAuthReady || !db) {
+                 console.warn("Firestore not ready, skipping history load.");
+                return;
+            }
+            const historyLogContainer = document.getElementById('historyLogContainer');
+            if (!historyLogContainer) return;
+            historyLogContainer.innerHTML = '<p class="text-gray-400">Φόρτωση ιστορικού...</p>';
+
+            try {
+                const logsCollectionPath = `artifacts/${appId}/public/data/tiktokVideoLogs`;
+                const q = query(
+                    collection(db, logsCollectionPath),
+                    where("videoId", "==", videoId),
+                    orderBy("timestamp", "desc"),
+                    limit(50) // Display latest 50 logs
+                );
+
+                // Use onSnapshot for real-time updates to the history log
+                onSnapshot(q, (querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        historyLogContainer.innerHTML = '<p class="text-gray-400">Δεν υπάρχει ιστορικό για αυτό το βίντεο.</p>';
+                        return;
+                    }
+                    let html = '';
+                    querySnapshot.forEach(doc => {
+                        const log = doc.data();
+                        const timeAgo = log.timestamp ? formatTimeAgo(log.timestamp) : 'άγνωστη ώρα';
+                        let changeDesc = '';
+                        if (log.eventType === 'stat_change') {
+                            changeDesc = `${log.fieldName}: ${log.oldValue} → ${log.newValue} (Διαφορά: ${log.newValue - log.oldValue})`;
+                        } else if (log.eventType === 'metadata_change') {
+                            changeDesc = `Το πεδίο '${log.fieldName}' άλλαξε από '${log.oldValue}' σε '${log.newValue}'`;
+                        } else {
+                            changeDesc = `Ενέργεια: ${log.eventType}, Πεδίο: ${log.fieldName}, Νέα τιμή: ${log.newValue}`;
+                        }
+                        html += `<div class="p-2 border-b border-gray-700">
+                                   <p class="text-gray-300">${changeDesc}</p>
+                                   <p class="text-xs text-purple-400">${timeAgo}</p>
+                                 </div>`;
+                    });
+                    historyLogContainer.innerHTML = html;
+                }, (error) => {
+                    console.error("Error fetching history from Firestore:", error);
+                    historyLogContainer.innerHTML = '<p class="text-red-400">Σφάλμα φόρτωσης ιστορικού.</p>';
+                    showMessage(`Σφάλμα φόρτωσης ιστορικού: ${error.message}`, 'error');
+                });
+
+            } catch (error) {
+                console.error("Error setting up history listener:", error);
+                historyLogContainer.innerHTML = '<p class="text-red-400">Σφάλμα ρύθμισης ακρόασης ιστορικού.</p>';
+            }
+        }
+
+
+        function formatTimeAgo(firestoreTimestamp) {
+            if (!firestoreTimestamp || !firestoreTimestamp.toDate) {
+                return 'άγνωστη ώρα';
+            }
+            const date = firestoreTimestamp.toDate();
+            const now = new Date();
+            const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
+            const minutes = Math.round(seconds / 60);
+            const hours = Math.round(minutes / 60);
+            const days = Math.round(hours / 24);
+
+            if (seconds < 5) return `μόλις τώρα`;
+            if (seconds < 60) return `πριν ${seconds} δευτ.`;
+            if (minutes < 60) return `πριν ${minutes} λεπ.`;
+            if (hours < 24) return `πριν ${hours} ώρες`;
+            return `πριν ${days} μέρες`;
+        }
+
+        // Function to initialize or update charts
+        async function updateCharts(videoId) {
+            if (!isAuthReady || !db) {
+                console.warn("Firestore not ready, skipping chart update.");
+                return;
+            }
+            try {
+                const snapshotsCollectionPath = `artifacts/${appId}/public/data/tiktokVideoStatsSnapshots`;
+                const q = query(
+                    collection(db, snapshotsCollectionPath),
+                    where("videoId", "==", videoId),
+                    orderBy("timestamp", "desc"), // Get latest first to easily pick last N
+                    limit(MAX_CHART_POINTS)
+                );
+
+                const querySnapshot = await getDocs(q);
+                const dataPoints = [];
+                querySnapshot.forEach(doc => dataPoints.push(doc.data()));
+                dataPoints.reverse(); // Order from oldest to newest for chart
+
+                const labels = dataPoints.map(dp => dp.timestamp ? formatTimeAgo(dp.timestamp) : new Date(dp.timestamp?.seconds * 1000).toLocaleTimeString() : 'N/A');
+                
+                const chartData = {
+                    views: dataPoints.map(dp => dp.views),
+                    likes: dataPoints.map(dp => dp.likes),
+                    comments: dataPoints.map(dp => dp.comments),
+                    shares: dataPoints.map(dp => dp.shares),
+                    saves: dataPoints.map(dp => dp.saves),
+                };
+
+                const chartConfigs = {
+                    viewsChart: { label: 'Προβολές', data: chartData.views, borderColor: 'rgba(54, 162, 235, 1)' },
+                    likesChart: { label: 'Likes', data: chartData.likes, borderColor: 'rgba(255, 99, 132, 1)' },
+                    commentsChart: { label: 'Σχόλια', data: chartData.comments, borderColor: 'rgba(75, 192, 192, 1)' },
+                    sharesChart: { label: 'Κοινοποιήσεις', data: chartData.shares, borderColor: 'rgba(153, 102, 255, 1)' },
+                    savesChart: { label: 'Αποθηκεύσεις', data: chartData.saves, borderColor: 'rgba(255, 159, 64, 1)' },
+                };
+                
+                for (const chartId in chartConfigs) {
+                    const canvas = document.getElementById(chartId);
+                    if (!canvas) {
+                        console.warn(`Canvas element not found for ${chartId}`);
+                        continue;
+                    }
+                    const ctx = canvas.getContext('2d');
+                    const config = chartConfigs[chartId];
+
+                    if (charts[chartId]) {
+                        charts[chartId].data.labels = labels;
+                        charts[chartId].data.datasets[0].data = config.data;
+                        charts[chartId].update();
+                    } else {
+                        charts[chartId] = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: config.label,
+                                    data: config.data,
+                                    borderColor: config.borderColor,
+                                    backgroundColor: config.borderColor.replace('1)', '0.2)'),
+                                    fill: true,
+                                    tension: 0.1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: { beginAtZero: false, ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.1)'} },
+                                    x: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.1)'} }
+                                },
+                                plugins: { legend: { labels: { color: '#e0e0e0' } } }
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Error updating charts from Firestore:", error);
+                showMessage(`Σφάλμα ενημέρωσης γραφημάτων: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadInitialData(videoId) {
+            if (!videoId) return;
+            currentVideoId = videoId; // Set current video ID
+            
+            // Fetch the absolute latest snapshot to set as previousStats
+            // This helps in logging changes accurately from the first manual/auto fetch
+            try {
+                const snapshotsCollectionPath = `artifacts/${appId}/public/data/tiktokVideoStatsSnapshots`;
+                const q = query(
+                    collection(db, snapshotsCollectionPath),
+                    where("videoId", "==", videoId),
+                    orderBy("timestamp", "desc"),
+                    limit(1)
+                );
+                const snapshot = await getDocs(q);
+                if (!snapshot.empty) {
+                    const lastKnownStats = snapshot.docs[0].data();
+                    previousStats = {
+                        play_count: lastKnownStats.views,
+                        digg_count: lastKnownStats.likes,
+                        comment_count: lastKnownStats.comments,
+                        share_count: lastKnownStats.shares,
+                        collect_count: lastKnownStats.saves,
+                        title: lastKnownStats.title,
+                        authorName: lastKnownStats.authorName,
+                        // Add other relevant fields if they are stored and needed for comparison
+                    };
+                    console.log("Loaded previous stats from last snapshot:", previousStats);
+                } else {
+                    previousStats = {}; // No prior data
+                     console.log("No previous stats snapshot found for this video.");
+                }
+            } catch (error) {
+                console.error("Error fetching latest snapshot for previousStats:", error);
+                previousStats = {}; // Reset on error
+            }
+
+            await updateCharts(videoId);
+            await loadAndDisplayHistory(videoId);
+        }
+
+
+        async function fetchVideoStats() {
+            const videoId = document.getElementById('videoId').value.trim();
+            if (!videoId) {
+                showMessage("Παρακαλώ εισάγετε ένα Video ID.", 'error');
+                return;
+            }
+            
+            if (currentVideoId !== videoId) { // New video ID entered
+                currentVideoId = videoId;
+                previousStats = {}; // Reset previous stats for new video
+                // Clear old chart data visually or re-initialize charts
+                Object.values(charts).forEach(chart => {
+                    if (chart) {
+                        chart.data.labels = [];
+                        chart.data.datasets.forEach(dataset => dataset.data = []);
+                        chart.update();
+                    }
+                });
+                document.getElementById('historyLogContainer').innerHTML = ''; // Clear old history
+                await loadInitialData(videoId); // Load initial data for the new video
+            }
+
+
+            videoDetailsContainer.innerHTML = '<p class="text-center text-lg text-gray-300">Φόρτωση στατιστικών...</p>';
+            progressBar.classList.remove('hidden');
+            progressBarFill.style.width = '0%';
+            progressBarFill.style.transition = 'width 0.5s ease-in-out';
+            progressBarFill.style.width = '50%';
+
+            try {
+                // const response = await fetch(`https://tiktok-stats.p.rapidapi.com/aweme/detail?aweme_id=${videoId}`, {
+                //     method: 'GET',
+                //     headers: {
+                //         'X-RapidAPI-Key': 'YOUR_RAPIDAPI_KEY', // Replace with your actual key
+                //         'X-RapidAPI-Host': 'tiktok-stats.p.rapidapi.com'
+                //     }
+                // });
+                // Using a mock API for demonstration as the RapidAPI key is not available
+                const response = await mockTikTokAPI(videoId);
+
+
+                progressBarFill.style.width = '100%';
+
+                if (!response.ok && response.status !== 200) { // RapidAPI often returns 200 even for errors in body
+                     const errorData = await response.json().catch(() => ({ message: "Άγνωστο σφάλμα API" }));
+                    throw new Error(`API Error: ${response.status} - ${errorData.message || 'Failed to fetch data'}`);
+                }
+                
+                const data = await response.json();
+
+                if (data.status_code !== 0 || !data.aweme_detail) {
+                     let errorMsg = `Σφάλμα από API TikTok: ${data.status_msg || 'Μη έγκυρη απάντηση'}.`;
+                    if(data.status_code === 2486) errorMsg = "Το βίντεο ενδέχεται να μην είναι διαθέσιμο ή το ID είναι λανθασμένο.";
+                    if(data.status_code === 4) errorMsg = "Το βίντεο δεν βρέθηκε. Ελέγξτε το ID.";
+                    console.error("API Error Details:", data);
+                    throw new Error(errorMsg);
+                }
+
+                const stats = data.aweme_detail;
+                displayVideoDetails(stats);
+
+                // Log changes and save snapshot
+                const newStatsForLog = {
+                    play_count: stats.statistics.play_count,
+                    digg_count: stats.statistics.digg_count,
+                    comment_count: stats.statistics.comment_count,
+                    share_count: stats.statistics.share_count,
+                    collect_count: stats.statistics.collect_count,
+                    title: stats.desc,
+                    authorName: stats.author ? stats.author.nickname : 'N/A'
+                };
+
+                // Compare and log stat changes
+                const statFields = {
+                    play_count: "Προβολές", digg_count: "Likes", comment_count: "Σχόλια",
+                    share_count: "Κοινοποιήσεις", collect_count: "Αποθηκεύσεις"
+                };
+
+                for (const key in statFields) {
+                    if (previousStats.hasOwnProperty(key) && newStatsForLog[key] !== previousStats[key]) {
+                        await logEvent(currentVideoId, 'stat_change', statFields[key], previousStats[key] || 0, newStatsForLog[key]);
+                    } else if (!previousStats.hasOwnProperty(key) && newStatsForLog[key] !== undefined) {
+                         // First time seeing this stat for this video session, log as initial value if needed or just let snapshot handle it
+                         // For simplicity, we rely on snapshots for initial chart data, and logs for explicit changes.
+                    }
+                }
+                // Compare and log metadata changes
+                if (previousStats.title !== undefined && newStatsForLog.title !== previousStats.title) {
+                    await logEvent(currentVideoId, 'metadata_change', 'Τίτλος', previousStats.title, newStatsForLog.title);
+                }
+                if (previousStats.authorName !== undefined && newStatsForLog.authorName !== previousStats.authorName) {
+                    await logEvent(currentVideoId, 'metadata_change', 'Όνομα Δημιουργού', previousStats.authorName, newStatsForLog.authorName);
+                }
+                
+                await saveStatsSnapshot(currentVideoId, newStatsForLog); // Save current state for charts
+                previousStats = { ...newStatsForLog }; // Update previousStats for next comparison
+
+                await updateCharts(currentVideoId); // Update charts with latest data
+                // loadAndDisplayHistory will be updated by onSnapshot, but can call it if not using onSnapshot for history
+                // await loadAndDisplayHistory(currentVideoId); 
+
+                showMessage("Τα στατιστικά ανανεώθηκαν!", 'success');
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+                videoDetailsContainer.innerHTML = `<p class="text-center text-red-400">Σφάλμα: ${error.message}</p>`;
+                showMessage(`Σφάλμα: ${error.message}`, 'error');
+            } finally {
+                setTimeout(() => progressBar.classList.add('hidden'), 500);
+            }
+        }
+        
+        // MOCK API FUNCTION - REPLACE THIS WITH YOUR ACTUAL API CALL
+        async function mockTikTokAPI(videoId) {
+            console.log("Using MOCK API for video ID:", videoId);
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+
+            // Simulate some data
+            const now = Date.now();
+            const basePlayCount = previousStats.play_count || (parseInt(videoId.slice(-5), 10) || 100000); // Base on video ID or previous
+            const baseLikes = previousStats.digg_count || Math.floor(basePlayCount / (10 + Math.random() * 5));
+            
+            const newPlayCount = basePlayCount + Math.floor(Math.random() * 1000) - 200; // Fluctuate
+            const newLikes = baseLikes + Math.floor(Math.random() * 50) - 10;
+            const newComments = (previousStats.comment_count || Math.floor(newLikes / 20)) + Math.floor(Math.random() * 10) - 3;
+            const newShares = (previousStats.share_count || Math.floor(newLikes / 30)) + Math.floor(Math.random() * 5) - 1;
+            const newCollect = (previousStats.collect_count || Math.floor(newLikes / 50)) + Math.floor(Math.random() * 5) - 1;
+
+            const titles = ["Epic Fail Compilation #fail #funny", "Amazing Dance Moves by @user123", "Cute Cat Moments 😻 #catsoftiktok", "Travel Vlog: Paradise Island", "DIY Home Decor Ideas"];
+            const currentTitle = previousStats.title || titles[Math.floor(Math.random() * titles.length)];
+            const newTitle = (Math.random() < 0.05) ? titles[Math.floor(Math.random() * titles.length)] : currentTitle; // 5% chance title changes
+
+
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    status_code: 0,
+                    aweme_detail: {
+                        aweme_id: videoId,
+                        desc: newTitle,
+                        create_time: Math.floor((now - (Math.random() * 1000 * 3600 * 24 * 30)) / 1000), // Random time in last 30 days
+                        author: {
+                            uid: "123456789",
+                            nickname: previousStats.authorName || `User${Math.floor(Math.random() * 1000)}`,
+                            avatar_thumb: { url_list: ["https://placehold.co/100x100/E6E6FA/000000?text=User"] }
+                        },
+                        video: {
+                            cover: { url_list: [`https://placehold.co/300x400/D3D3D3/000000?text=Video+${videoId}`] },
+                            play_addr: { url_list: ["#mock_video_url"] }, // Mock URL
+                            duration: Math.floor(15000 + Math.random() * 45000) // 15s to 60s
+                        },
+                        music: {
+                            title: `Mock Music ${Math.floor(Math.random() * 100)}`,
+                            cover_hd: { url_list: ["https://placehold.co/100x100/ADD8E6/000000?text=Music"] },
+                            play_url: { url_list: ["#mock_music_url"] } // Mock URL
+                        },
+                        statistics: {
+                            play_count: Math.max(0, newPlayCount),
+                            digg_count: Math.max(0, newLikes),
+                            comment_count: Math.max(0, newComments),
+                            share_count: Math.max(0, newShares),
+                            collect_count: Math.max(0, newCollect), // For "Saves"
+                            download_count: Math.floor(Math.random() * 100),
+                            forward_count: Math.floor(Math.random() * 50), // Often same as share_count
+                            lose_comment_count: 0,
+                            lose_count: 0,
+                            whatsapp_share_count: Math.floor(Math.random() * 20)
+                        },
+                        // ... other fields RapidAPI might provide
+                    }
+                })
+            };
+        }
+
+
+        function displayVideoDetails(stats) {
+            const videoData = {
+                title: stats.desc || " Άγνωστος Τίτλος",
+                author: stats.author ? stats.author.nickname : " Άγνωστος Δημιουργός",
+                authorAvatar: stats.author && stats.author.avatar_thumb ? stats.author.avatar_thumb.url_list[0] : "https://placehold.co/100x100/E6E6FA/000000?text=User",
+                cover: stats.video && stats.video.cover ? stats.video.cover.url_list[0] : `https://placehold.co/300x400/D3D3D3/000000?text=Video+${stats.aweme_id}`,
+                duration: stats.video ? (stats.video.duration / 1000).toFixed(0) : "N/A",
+                musicTitle: stats.music ? stats.music.title : " Άγνωστη Μουσική",
+                musicCover: stats.music && stats.music.cover_hd ? stats.music.cover_hd.url_list[0] : "https://placehold.co/100x100/ADD8E6/000000?text=Music",
+                musicUrl: stats.music && stats.music.play_url ? stats.music.play_url.url_list[0] : "#",
+                videoUrl: stats.video && stats.video.play_addr ? stats.video.play_addr.url_list[0] : "#",
+
+                views: stats.statistics.play_count || 0,
+                likes: stats.statistics.digg_count || 0,
+                comments: stats.statistics.comment_count || 0,
+                shares: stats.statistics.share_count || 0,
+                saves: stats.statistics.collect_count || 0, // Using collect_count for "Saves"
+            };
+
+            videoDetailsContainer.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    <div class="md:col-span-1 flex flex-col items-center">
+                        <img src="${videoData.cover}" alt="Video Cover" class="w-48 h-auto object-cover rounded-lg shadow-lg mb-3 border-2 border-purple-500" onerror="this.src='https://placehold.co/200x300/cccccc/000000?text=Error';">
+                        <a href="${videoData.videoUrl}" id="downloadVideo" target="_blank" class="mt-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out text-sm block text-center">🎬 Λήψη Βίντεο</a>
+                    </div>
+                    <div class="md:col-span-2">
+                        <h2 class="text-2xl font-bold text-pink-400 mb-2">${videoData.title}</h2>
+                        <div class="flex items-center mb-3">
+                            <img src="${videoData.authorAvatar}" alt="Author Avatar" class="w-10 h-10 rounded-full mr-3 border-2 border-pink-300" onerror="this.src='https://placehold.co/40x40/E6E6FA/000000?text=User';">
+                            <p class="text-lg text-purple-300">${videoData.author}</p>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-1">Διάρκεια: ${videoData.duration}s</p>
+                        
+                        <div class="flex items-center my-3 p-3 bg-gray-700 bg-opacity-50 rounded-lg">
+                            <img src="${videoData.musicCover}" alt="Music Cover" class="w-12 h-12 rounded-md mr-3 border border-purple-400" onerror="this.src='https://placehold.co/50x50/ADD8E6/000000?text=Music';">
+                            <div>
+                                <p class="text-md font-semibold text-cyan-300">${videoData.musicTitle}</p>
+                                <div class="flex space-x-2 mt-1">
+                                     <a href="${videoData.musicUrl}" id="downloadMP3" target="_blank" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-md shadow transition duration-150">🎵 Λήψη MP3</a>
+                                     <button id="playButton" onclick="playMusic()" class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-black text-xs rounded-md shadow transition duration-150">▶️ Αναπαραγωγή</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-center">
+                    <div class="stat-item"><p class="stat-label">👁️ Προβολές</p><p class="stat-value">${videoData.views.toLocaleString()}</p></div>
+                    <div class="stat-item"><p class="stat-label">❤️ Likes</p><p class="stat-value">${videoData.likes.toLocaleString()}</p></div>
+                    <div class="stat-item"><p class="stat-label">💬 Σχόλια</p><p class="stat-value">${videoData.comments.toLocaleString()}</p></div>
+                    <div class="stat-item"><p class="stat-label">🔁 Κοινοποιήσεις</p><p class="stat-value">${videoData.shares.toLocaleString()}</p></div>
+                    <div class="stat-item"><p class="stat-label">💾 Αποθηκεύσεις</p><p class="stat-value">${videoData.saves.toLocaleString()}</p></div>
+                </div>
+            `;
+        }
+
+
+        function startAutoChecker() {
+            const intervalSeconds = parseInt(document.getElementById('autoCheckInterval').value);
+            if (isNaN(intervalSeconds) || intervalSeconds < 10) {
+                showMessage("Το διάστημα αυτόματου ελέγχου πρέπει να είναι τουλάχιστον 10 δευτερόλεπτα.", 'error');
+                return;
+            }
+            if (statsCheckInterval) clearInterval(statsCheckInterval); // Clear existing interval
+
+            showMessage(`Ο αυτόματος έλεγχος ξεκίνησε κάθε ${intervalSeconds} δευτερόλεπτα.`, 'info');
+            fetchVideoStats(); // Initial fetch
+            statsCheckInterval = setInterval(fetchVideoStats, intervalSeconds * 1000);
+            document.getElementById('startAutoCheck').disabled = true;
+            document.getElementById('stopAutoCheck').disabled = false;
+        }
+
+        function stopAutoChecker() {
+            if (statsCheckInterval) {
+                clearInterval(statsCheckInterval);
+                statsCheckInterval = null;
+                showMessage("Ο αυτόματος έλεγχος σταμάτησε.", 'info');
+                document.getElementById('startAutoCheck').disabled = false;
+                document.getElementById('stopAutoCheck').disabled = true;
+            }
+        }
+        
+        // Has to be global for the inline onclick
+        window.playMusic = function() {
+            const musicUrl = document.getElementById('downloadMP3')?.href;
+            const playButton = document.getElementById('playButton');
+
+            if (!musicUrl || musicUrl.endsWith('#') || musicUrl === window.location.href + '#') {
+                showMessage("Δεν υπάρχει διαθέσιμο URL μουσικής για αυτό το βίντεο.", 'error');
+                return;
+            }
+
+            if (musicAudio && !musicAudio.paused) {
+                musicAudio.pause();
+                if(playButton) playButton.innerText = "▶️ Αναπαραγωγή";
+            } else {
+                if (!musicAudio || musicAudio.src !== musicUrl) {
+                    if(musicAudio) musicAudio.pause(); // Stop previous audio if any
+                    musicAudio = new Audio(musicUrl);
+                    musicAudio.onended = function() {
+                        if(playButton) playButton.innerText = "▶️ Αναπαραγωγή";
+                        if(musicAudio) musicAudio.currentTime = 0;
+                    };
+                     musicAudio.onerror = function() {
+                        console.error("Error playing music with <audio> element.");
+                        showMessage("Σφάλμα αναπαραγωγής μουσικής. Η μορφή ενδέχεται να μην υποστηρίζεται.", 'error');
+                        if(playButton) playButton.innerText = "▶️ Αναπαραγωγή";
+                    };
+                }
+                musicAudio.play().then(() => {
+                    if(playButton) playButton.innerText = "⏹️ Παύση";
+                }).catch(error => {
+                    console.error("Error playing music:", error);
+                    showMessage("Δεν ήταν δυνατή η αναπαραγωγή της μουσικής.", 'error');
+                    if(playButton) playButton.innerText = "▶️ Αναπαραγωγή";
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            videoDetailsContainer = document.getElementById('videoDetailsContainer');
+            progressBar = document.getElementById('progressBar');
+            progressBarFill = document.getElementById('progressBarFill');
+            
+            // Re-assign DOM elements that might not be ready when script first runs
+            const videoIdInput = document.getElementById('videoId');
+            const fetchButton = document.getElementById('fetchButton');
+            const autoCheckIntervalInput = document.getElementById('autoCheckInterval');
+            const startAutoCheckButton = document.getElementById('startAutoCheck');
+            const stopAutoCheckButton = document.getElementById('stopAutoCheck');
+            const closeMessageButton = document.getElementById('closeMessage');
+
+            if(fetchButton) fetchButton.addEventListener('click', fetchVideoStats);
+            if(startAutoCheckButton) startAutoCheckButton.addEventListener('click', startAutoChecker);
+            if(stopAutoCheckButton) stopAutoCheckButton.addEventListener('click', stopAutoChecker);
+            if(closeMessageButton) closeMessageButton.addEventListener('click', () => {
+                document.getElementById('messageBox').classList.add('hidden');
+            });
+            if(videoIdInput) {
+                 videoIdInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        fetchVideoStats();
+                    }
+                });
+                // If there's a video ID on load (e.g. from browser history), try to load its data
+                if (videoIdInput.value && isAuthReady) { // Check isAuthReady too
+                    loadInitialData(videoIdInput.value);
+                }
+            }
+        });
+
+    </script>
     <style>
         @import url('https://fonts.cdnfonts.com/css/burbank-big-condensed');
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'); /* For icons */
 
         :root {
             --font-primary: 'Burbank Big Condensed', sans-serif;
-            --color-bg-gradient-start: #5D3FD3; /* Deeper Purple */
-            --color-bg-gradient-end: #1E90FF;   /* Dodger Blue */
+            --color-bg-gradient-start: #48036F; /* Darker Purple */
+            --color-bg-gradient-end: #000033;   /* Dark Navy Blue */
             --color-text-light: #ffffff;
             --color-text-secondary: #e0e0e0;
-            
-            --color-container-bg: rgba(0, 0, 0, 0.3);
-            --color-container-border: rgba(255, 255, 255, 0.35);
-            --color-container-shadow-main: rgba(255, 105, 180, 0.75); /* Hot Pink Glow */
-            --color-container-shadow-main-brighter: rgba(255, 105, 180, 0.95); /* Brighter for animation */
-            --color-container-shadow-inset: rgba(0, 255, 255, 0.55); /* Cyan Inner Glow */
-
-            --color-button-gradient-start: #FF1493; /* DeepPink */
-            --color-button-gradient-end: #FF69B4;   /* HotPink */
-            --color-button-shadow-3d: #b3006e; /* Darker pink for 3D effect */
-            --color-button-hover-start: #ff0084;
-            --color-button-hover-end: #ff55a8;
-            
-            --color-stat-bg: rgba(255, 255, 255, 0.12);
-            --color-stat-shadow: rgba(0, 255, 255, 0.65); 
-            --color-stat-hover-shadow: rgba(255, 0, 255, 0.85);
-            
-            --color-input-bg: rgba(0, 0, 0, 0.4);
-            --color-input-border: rgba(255, 255, 255, 0.4);
-            --color-input-focus-border: var(--color-stat-hover-shadow);
-            --color-input-focus-shadow: var(--color-stat-hover-shadow);
-
-            --color-update-increase: #39FF14; /* Neon Green */
-            --color-update-decrease: #FFD700; /* Gold/Yellow */
-            --progress-bar-gradient-start: var(--color-update-decrease);
-            --progress-bar-gradient-end: var(--color-update-increase);
-
-
-            --animation-duration-fast: 0.5s;
-            --animation-duration-medium: 0.3s;
-        }
-
-        html {
-            box-sizing: border-box;
-        }
-        *, *:before, *:after {
-            box-sizing: inherit;
+            --color-container-bg: rgba(10, 0, 20, 0.5); /* Very dark translucent purple */
+            --color-container-border: rgba(173, 216, 230, 0.3); /* Light Blue translucent */
+            --color-container-shadow-main: rgba(255, 105, 180, 0.6); /* Hot Pink Glow */
+            --color-container-shadow-main-brighter: rgba(255, 105, 180, 0.8);
+            --color-container-shadow-inset: rgba(0, 255, 255, 0.4); /* Cyan inset */
+            --color-accent-glow: rgba(0, 255, 255, 0.7); /* Cyan glow for accents */
+            --color-input-bg: rgba(0,0,0, 0.4);
+            --color-input-border: rgba(173, 216, 230, 0.5);
+            --color-button-primary-bg: #FF69B4; /* Hot Pink */
+            --color-button-primary-hover: #FF1493; /* Deep Pink */
+            --color-button-secondary-bg: #4A00E0; /* Bright Purple */
+            --color-button-secondary-hover: #8A2BE2; /* Blue Violet */
         }
 
         body {
-            font-family: var(--font-primary);
-            background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
             color: var(--color-text-light);
-            text-align: center;
-            padding: 20px;
             margin: 0;
+            padding: 20px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
         }
-        
+
         .container {
-            max-width: 680px; /* Slightly wider */
-            width: 95%;
-            margin: 20px auto; /* Added top/bottom margin */
-            background: var(--color-container-bg);
-            padding: 30px 35px; /* Increased padding */
-            border-radius: 30px; /* More rounded */
-            border: 2px solid var(--color-container-border);
-            backdrop-filter: blur(14px);
-            animation: subtleGlow 6s infinite alternate ease-in-out;
-        }
-
-        @keyframes subtleGlow {
-            0% { 
-                box-shadow: 0 0 25px var(--color-container-shadow-main),
-                            0 0 15px var(--color-container-shadow-inset) inset,
-                            0 0 40px rgba(30, 144, 255, 0.5); /* Dodger blue subtle outer glow */
-            }
-            100% { 
-                box-shadow: 0 0 35px var(--color-container-shadow-main-brighter),
-                            0 0 25px var(--color-container-shadow-inset) inset,
-                            0 0 50px rgba(30, 144, 255, 0.7);
-            }
-        }
-
-        h2 {
-            font-size: 40px; 
-            margin-bottom: 35px;
-            letter-spacing: 1.5px;
-            line-height: 1.2;
-            font-weight: 700; /* Bolder font if available */
-            text-shadow: 3px 3px 0px #333, /* Darker, more defined shadow */
-                         0 0 15px rgba(255,255,255,0.3); /* Soft white aura */
-            background: linear-gradient(45deg, var(--color-button-gradient-end), var(--color-text-light), var(--color-button-gradient-start), var(--color-text-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-size: 300% 300%;
-            animation: titleGradient 10s infinite ease-in-out alternate;
-        }
-        @keyframes titleGradient {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-
-        input[type="text"] {
-            width: calc(90% - 32px); 
-            padding: 16px; 
-            border-radius: 16px; /* More rounded */
-            border: 2px solid var(--color-input-border);
-            outline: none;
-            background: var(--color-input-bg);
-            color: var(--color-text-light);
-            text-align: center;
-            font-size: 18px; 
-            font-family: var(--font-primary);
-            margin-bottom: 20px; /* Increased margin */
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
-            transition: border-color var(--animation-duration-medium), box-shadow var(--animation-duration-medium);
-        }
-        input[type="text"]::placeholder {
-            color: rgba(255,255,255,0.6);
-            font-family: var(--font-primary);
-        }
-        input[type="text"]:focus {
-            border-color: var(--color-input-focus-border); 
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 0 12px var(--color-input-focus-shadow);
-        }
-
-
-        .progress-bar-wrapper {
-            margin: 25px auto 20px auto; 
-            width: 90%;
-        }
-        .progress-bar-label {
-            font-size: 17px; /* Slightly larger */
-            color: var(--color-text-secondary);
-            margin-bottom: 10px; /* Increased space */
-            text-align: left;
-            font-family: var(--font-primary);
-            letter-spacing: 0.5px;
-            font-weight: bold;
-        }
-        .progress-bar-container {
+            background-color: var(--color-container-bg);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid var(--color-container-border);
+            box-shadow: 0 0 20px var(--color-container-shadow-main), 0 0 30px var(--color-container-shadow-main-brighter), inset 0 0 15px var(--color-container-shadow-inset);
             width: 100%;
-            height: 14px; /* Thicker bar */
-            background-color: rgba(0, 0, 0, 0.5); /* Darker */
-            border-radius: 7px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.25); 
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); /* Inner shadow */
+            max-width: 900px; /* Max width for better readability */
+            animation: pulseGlow 5s infinite alternate;
         }
-        .progress-bar-fill {
-            height: 100%;
-            width: 0%; 
-            background: linear-gradient(90deg, var(--progress-bar-gradient-start), var(--progress-bar-gradient-end)); 
-            border-radius: 6px; 
-            /* transition set by JS */
-            box-shadow: 0 0 8px var(--progress-bar-gradient-end), /* Glow from the fill color */
-                        inset 0 -1px 1px rgba(0,0,0,0.25), 
-                        inset 0 1px 1px rgba(255,255,255,0.25); 
+        
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 20px var(--color-container-shadow-main), 0 0 30px var(--color-container-shadow-main-brighter), inset 0 0 15px var(--color-container-shadow-inset); }
+            to { box-shadow: 0 0 25px var(--color-container-shadow-main-brighter), 0 0 35px var(--color-container-shadow-main), inset 0 0 20px var(--color-accent-glow); }
         }
 
-
-        a, button {
-            display: block;
-            margin: 18px auto; /* Increased margin */
-            padding: 18px 15px; 
-            background: linear-gradient(135deg, var(--color-button-gradient-start), var(--color-button-gradient-end));
-            color: var(--color-text-light);
-            text-decoration: none;
-            border-radius: 16px; 
-            font-weight: bold;
-            width: 90%;
+        h1 {
+            font-family: var(--font-primary);
+            color: var(--color-text-light) !important; /* Ensure white color, overriding potential conflicts */
+            font-size: clamp(2em, 5vw, 2.8em); /* Responsive font size */
+            text-shadow: 0 0 8px var(--color-accent-glow), 0 0 12px var(--color-accent-glow), 0 0 18px var(--color-button-primary-bg);
+            margin-bottom: 25px;
+            letter-spacing: 1.5px;
             text-align: center;
-            font-size: 21px; 
-            border: none; 
+        }
+        
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--color-text-secondary); }
+        .input-group input[type="text"], .input-group input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--color-input-border);
+            background-color: var(--color-input-bg);
+            color: var(--color-text-light);
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .input-group input:focus {
             outline: none;
-            cursor: pointer;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.35);
-            box-shadow: 0 6px 0 var(--color-button-shadow-3d), 
-                        0 9px 20px rgba(var(--color-button-gradient-start), 0.45);
+            border-color: var(--color-accent-glow);
+            box-shadow: 0 0 10px var(--color-accent-glow);
+        }
+
+        .button-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom:20px;}
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--font-primary);
+            font-size: 1.1em;
             letter-spacing: 0.5px;
-            position: relative; /* For shimmer effect */
-            overflow: hidden; /* For shimmer effect */
-            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), 
-                        box-shadow 0.15s ease, 
-                        background 0.2s ease;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
         }
-        /* Shimmer Effect */
-        a::before, button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -150%; /* Start further left */
-            width: 70%; /* Wider shimmer */
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-            transform: skewX(-25deg); /* Angled shimmer */
-            transition: left 0.7s ease-in-out; /* Slower, smoother transition */
-        }
-        a:hover::before, button:hover::before {
-            left: 150%; /* Move further right */
-        }
+        .button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .button:active { transform: translateY(0px); }
+        .button-primary { background-color: var(--color-button-primary-bg); color: white; }
+        .button-primary:hover { background-color: var(--color-button-primary-hover); }
+        .button-secondary { background-color: var(--color-button-secondary-bg); color: white; }
+        .button-secondary:hover { background-color: var(--color-button-secondary-hover); }
+        .button:disabled { background-color: #555; color: #999; cursor: not-allowed; transform: none; box-shadow: none;}
 
-        a:hover, button:hover {
-            transform: scale(1.04) translateY(-4px); 
-            box-shadow: 0 8px 0 var(--color-button-shadow-3d), 
-                        0 12px 25px rgba(var(--color-button-gradient-start), 0.7);
-            background: linear-gradient(135deg, var(--color-button-hover-start), var(--color-button-hover-end));
-        }
-        a:active, button:active {
-            transform: scale(0.97) translateY(2px); 
-            box-shadow: 0 3px 0 var(--color-button-shadow-3d),
-                        0 6px 15px rgba(var(--color-button-gradient-start), 0.5);
-        }
-
-
-        #statsContainer {
-            display: none;
-            animation: fadeInStats 0.8s ease-out forwards;
-            margin-top: 20px; /* Space above stats */
-        }
-        @keyframes fadeInStats {
-            from { opacity: 0; transform: translateY(25px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
+        #progressBar { background-color: #333; border-radius: 5px; overflow: hidden; height: 10px; margin-top:15px; }
+        #progressBarFill { background-color: var(--color-accent-glow); height: 100%; width: 0%; transition: width 0.3s ease-in-out; }
         
-        img#cover {
-            width: 190px; 
-            height: 190px;
-            border-radius: 22px; 
-            margin-top: 20px;
+        #videoDetailsContainer { margin-top: 20px; padding: 20px; background-color: rgba(0,0,0,0.2); border-radius: 10px; }
+        .stat-item { background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .stat-label { font-size: 0.9em; color: var(--color-text-secondary); margin-bottom: 5px; }
+        .stat-value { font-size: 1.3em; font-weight: bold; color: var(--color-accent-glow); }
+
+        /* Charts and History Styling */
+        #statsCharts { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .chart-container { background-color: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); height: 300px; /* Fixed height for consistency */ }
+        
+        #statsHistory { 
+            margin-top: 30px; 
+            padding: 20px; 
+            background-color: rgba(0,0,0,0.3); 
+            border-radius: 10px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+        }
+        #statsHistory h3 {
+            font-family: var(--font-primary);
+            color: var(--color-accent-glow);
+            font-size: 1.8em;
+            text-align: center;
             margin-bottom: 15px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.75), 0 0 35px rgba(255, 0, 255, 0.55);
-            border: 5px solid var(--color-text-light); /* Thicker border */
-            transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
-            object-fit: cover;
+            letter-spacing: 1px;
         }
-        img#cover:hover {
-            transform: scale(1.08) rotate(4deg); 
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.9), 0 0 45px rgba(255, 0, 255, 0.75), 0 0 15px #fff; /* Added white glow */
+        #historyLogContainer {
+            max-height: 300px; /* Scrollable history */
+            overflow-y: auto;
+            padding-right: 10px; /* For scrollbar */
+            border: 1px solid var(--color-container-border);
+            border-radius: 5px;
+            background-color: rgba(0,0,0,0.2);
         }
+        #historyLogContainer > div { /* Individual log entry */
+            border-bottom: 1px solid rgba(173, 216, 230, 0.2);
+            padding: 8px 5px;
+        }
+        #historyLogContainer > div:last-child { border-bottom: none; }
 
-        .info {
-            font-size: 19px; 
-            margin: 18px 0;
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-            word-break: break-word;
-        }
-        .info strong {
-            color: var(--color-text-light);
-            font-weight: bold; /* Ensure strong is bold */
-        }
+        /* Custom Scrollbar for history */
+        #historyLogContainer::-webkit-scrollbar { width: 8px; }
+        #historyLogContainer::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px;}
+        #historyLogContainer::-webkit-scrollbar-thumb { background: var(--color-accent-glow); border-radius: 4px;}
+        #historyLogContainer::-webkit-scrollbar-thumb:hover { background: var(--color-button-primary-hover); }
 
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 30px; /* More space */
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 18px; /* Slightly more gap */
-        }
-
-        .stats div {
-            font-size: 30px; 
-            padding: 18px; /* More padding */
-            background: var(--color-stat-bg);
-            border-radius: 18px; /* More rounded */
-            box-shadow: 0 0 14px var(--color-stat-shadow), inset 0 0 8px rgba(0,0,0,0.3); /* Added inset shadow */
-            transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), /* Different bounce */
-                        box-shadow 0.28s ease-in-out;
-            flex-basis: calc(50% - 22px); 
-            min-width: 135px; 
-            max-width: 170px;
-        }
-
-        .stats div:hover {
-            transform: scale(1.14) rotate(-2deg); /* Added slight rotation */
-            box-shadow: 0 0 25px var(--color-stat-hover-shadow), 
-                        0 0 12px rgba(255, 255, 255, 0.35) inset, /* Brighter inset */
-                        0 5px 15px rgba(0,0,0,0.2); /* Subtle drop shadow */
-        }
-
-        .stats p { 
-            font-size: 17px; 
-            margin: 9px 0 6px 0;
-            font-weight: bold;
-            color: var(--color-text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.7px; /* More spacing */
-        }
-        .stats div p:last-of-type { 
-            font-size: 32px; 
-            font-weight: bold;
-            color: var(--color-text-light);
-            line-height: 1;
-            min-height: 32px; 
-            word-break: break-all; 
-        }
-        
-        .stat-value-changing { 
-            animation: valueUpdateEffect var(--animation-duration-fast) ease-in-out;
-            display: inline-block; 
-        }
-        @keyframes valueUpdateEffect {
-            0%, 100% { transform: scale(1) translateY(0); opacity: 1;}
-            30% { transform: scale(1.1) translateY(-3px); opacity: 0.7;}
-            60% { transform: scale(1.45) translateY(0px); opacity: 1; color: var(--dynamic-update-color, var(--color-button-gradient-start)); text-shadow: 0 0 12px var(--dynamic-update-color, var(--color-button-gradient-start));}
-        }
-
+        /* Message Box Styling */
+        #messageBox.hidden { display: none; }
+        /* Tailwind classes will be applied via JS for bg color, but ensure base visibility and positioning */
 
         /* Responsive adjustments */
-        @media (max-width: 700px) {
-            .container { padding: 25px 20px; }
-            h2 { font-size: 34px; margin-bottom: 30px; }
-            .stats div { flex-basis: calc(50% - 15px); }
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            h1 { font-size: 2em; }
+            .button-group { flex-direction: column; }
+            #videoDetailsContainer .grid-cols-3 { grid-template-columns: 1fr; } /* Stack video cover and details */
+            #videoDetailsContainer .grid-cols-5 { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+            .stat-value { font-size: 1.1em; }
         }
-        @media (max-width: 600px) {
-            h2 { font-size: 30px; }
-            .stats div {
-                min-width: 125px;
-                font-size: 26px; 
-            }
-            .stats p { font-size: 15px; }
-            .stats div p:last-of-type { font-size: 28px; }
-            img#cover { width: 160px; height: 160px; }
-            a, button { font-size: 19px; padding: 15px 12px; }
-            input[type="text"] { font-size: 17px; padding: 14px; }
-            .info { font-size: 17px; }
-            .progress-bar-label {font-size: 15px;}
-            .progress-bar-container {height: 12px;}
-        }
-        @media (max-width: 450px) {
-            .container { padding: 20px 15px; }
-            h2 { font-size: 26px; letter-spacing: 1px;}
-            .stats div {
-                flex-basis: 100%; 
-                max-width: 280px; /* Allow full width but cap it */
-                margin-left: auto;
-                margin-right: auto;
-            }
-            input[type="text"], a, button { width: 95%; }
-            .progress-bar-wrapper { width: 95%;}
-        }
+         /* Ensure Tailwind-like grid for charts */
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } /* This will be applied by Tailwind if used, or manually */
+        .gap-4 { gap: 1rem; }
+        .gap-6 { gap: 1.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .mt-8 { margin-top: 2rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); } /* Example shadow */
+        .text-xl { font-size: 1.25rem; }
+        .font-semibold { font-weight: 600; }
+        .text-white { color: #fff; }
+        .max-h-96 { max-height: 24rem; }
+        .overflow-y-auto { overflow-y: auto; }
+        .text-sm { font-size: 0.875rem; }
+        .bg-gray-800 { background-color: #1f2937; } /* Example color */
+        .bg-opacity-50 { background-color: rgba(31,41,55,0.5); } /* Example opacity */
+
 
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>📊 TikTok Turbo Stats 🎮</h2>
-        <input type="text" id="videoUrl" placeholder="Paste TikTok Video URL Here!">
-        <button id="searchButton" onclick="startFetchingData()">🚀 Get Video Stats!</button>
+        <h1>📊 TikTok Turbo Stats 🎮</h1>
 
-        <div class="progress-bar-wrapper" id="progressBarWrapper" style="display: none;">
-            <p class="progress-bar-label">Next refresh in:</p>
-            <div class="progress-bar-container">
-                <div id="refreshProgressBar" class="progress-bar-fill"></div>
-            </div>
+        <div class="input-group">
+            <label for="videoId">TikTok Video ID:</label>
+            <input type="text" id="videoId" placeholder="Εισάγετε το ID του βίντεο (π.χ. 7264000000000000000)">
+        </div>
+
+        <div class="button-group">
+            <button id="fetchButton" class="button button-primary">📊 Λήψη Στατιστικών</button>
         </div>
         
-        <div id="statsContainer">
-            <img id="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Video Cover"> <p class="info"><strong>Creator:</strong> <span id="creator">-</span></p>
-            <p class="info"><strong>Description:</strong> <span id="desc">-</span></p>
-            <p class="info"><strong>Date:</strong> <span id="date">-</span></p>
+        <div class="input-group">
+            <label for="autoCheckInterval">Διάστημα Αυτόματου Ελέγχου (δευτερόλεπτα, min 10):</label>
+            <input type="number" id="autoCheckInterval" value="60" min="10">
+        </div>
 
-            <div class="stats">
-                <div>👁️ <p>Views</p><p id="views">0</p></div>
-                <div>❤️ <p>Likes</p><p id="likes">0</p></div>
-                <div>🔄 <p>Shares</p><p id="shares">0</p></div>
-                <div>💬 <p>Comments</p><p id="comments">0</p></div>
+        <div class="button-group">
+            <button id="startAutoCheck" class="button button-secondary">🚀 Έναρξη Αυτόματου Ελέγχου</button>
+            <button id="stopAutoCheck" class="button button-secondary" disabled>🛑 Παύση Αυτόματου Ελέγχου</button>
+        </div>
+
+        <div id="progressBar" class="hidden">
+            <div id="progressBarFill"></div>
+        </div>
+
+        <div id="videoDetailsContainer">
+            <p class="text-center text-gray-400">Εισάγετε ένα Video ID και πατήστε "Λήψη Στατιστικών".</p>
+        </div>
+
+        <div id="statsChartsSection" class="mt-8">
+            <h3 class="text-2xl font-bold text-center text-pink-300 mb-4">📈 Διαγράμματα Στατιστικών</h3>
+            <div id="statsCharts" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="chart-container"><canvas id="viewsChart"></canvas></div>
+                <div class="chart-container"><canvas id="likesChart"></canvas></div>
+                <div class="chart-container"><canvas id="commentsChart"></canvas></div>
+                <div class="chart-container"><canvas id="sharesChart"></canvas></div>
+                <div class="chart-container"><canvas id="savesChart"></canvas></div>
             </div>
+        </div>
 
-            <p class="info" id="musicInfoSection"><strong>🎵 Music:</strong> <span id="music_title">-</span> by <span id="music_artist">-</span></p>
-            <button id="playButton" onclick="playMusic()" style="display: none;">▶️ Play Music</button>
-            <a id="downloadMP3" href="#" target="_blank" style="display: none;">🎶 Download MP3</a>
-            <a id="download" href="#" target="_blank" style="display: none;">⬇️ Download Video</a>
+        <div id="statsHistory" class="mt-8">
+            <h3 class="text-xl font-semibold text-white mb-3">📜 Ιστορικό Αλλαγών</h3>
+            <div id="historyLogContainer">
+                <p class="text-gray-400">Το ιστορικό θα εμφανιστεί εδώ μετά την πρώτη λήψη δεδομένων.</p>
+            </div>
         </div>
     </div>
 
-    <script>
-        let lastStats = { views: 0, likes: 0, shares: 0, comments: 0 };
-        let intervalId;
-        let musicAudio = null;
-        const API_BASE_URL = 'https://countik.com/api/videoinfo/'; 
-        const ANIMATION_DURATION_MS = 500; 
-        const REFRESH_INTERVAL_MS = 10000; // 10 seconds
+    <div id="messageBox" class="hidden fixed top-5 right-5 p-4 rounded-lg shadow-xl text-white z-50">
+        <p id="messageText"></p>
+        <button id="closeMessage" class="absolute top-1 right-2 text-xl font-bold">&times;</button>
+    </div>
 
-        function animateCounter(element, target, previous) {
-            target = Number(target) || 0;
-            previous = Number(previous) || 0;
-
-            if (target !== previous) {
-                element.classList.add('stat-value-changing');
-                if (target > previous) {
-                    element.style.setProperty('--dynamic-update-color', 'var(--color-update-increase)');
-                } else {
-                    element.style.setProperty('--dynamic-update-color', 'var(--color-update-decrease)');
-                }
-
-                setTimeout(() => {
-                    element.classList.remove('stat-value-changing');
-                    element.style.removeProperty('--dynamic-update-color');
-                }, ANIMATION_DURATION_MS);
-
-                let current = previous;
-                const steps = 30; 
-                const durationPerStep = Math.max(15, (ANIMATION_DURATION_MS - 50) / steps); 
-                const increment = (target - previous) / steps;
-
-                if (element.animationInterval) {
-                    clearInterval(element.animationInterval);
-                }
-
-                let stepCount = 0;
-                element.animationInterval = setInterval(() => {
-                    current += increment;
-                    stepCount++;
-
-                    if ((increment > 0 && current >= target) || (increment < 0 && current <= target) || stepCount >= steps) {
-                        current = target;
-                        clearInterval(element.animationInterval);
-                        element.animationInterval = null;
-                    }
-                    element.innerText = Math.round(current).toLocaleString();
-                }, durationPerStep);
-
-            } else {
-                element.innerText = target.toLocaleString();
-            }
-        }
-        
-        function updateProgressBar() {
-            const progressBarFill = document.getElementById('refreshProgressBar');
-            const progressBarWrapper = document.getElementById('progressBarWrapper');
-
-            if (progressBarFill && progressBarWrapper) {
-                progressBarWrapper.style.display = 'block'; 
-                progressBarFill.style.transition = 'none'; 
-                progressBarFill.style.width = '0%'; 
-
-                // Force reflow to apply the reset width before starting animation
-                void progressBarFill.offsetWidth; // Using void for linters
-
-                progressBarFill.style.transition = `width ${REFRESH_INTERVAL_MS / 1000}s linear`;
-                progressBarFill.style.width = '100%';
-            }
-        }
-
-        async function fetchVideoData() {
-            const urlInput = document.getElementById('videoUrl').value;
-            const match = urlInput.match(/video\/(\d+)/);
-            if (!match) {
-                // Alert is handled by startFetchingData or directly if called without it
-                // alert('Invalid TikTok URL. Please paste a valid video link!');
-                return false; // Indicate failure
-            }
-            const videoId = match[1];
-            
-            const searchButton = document.getElementById('searchButton');
-            searchButton.innerText = '⏳ Fetching...';
-            searchButton.disabled = true;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}${videoId}`);
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error(`API Error Response: ${errorText}`);
-                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-                }
-                const data = await response.json();
-
-                if (data && (data.status === 'success' || data.status === undefined) && data.creator) { // Check for success or if status is missing but data is present
-                  displayData(data);
-                  return true; // Indicate success
-                } else {
-                  throw new Error(data.message || 'Video not found or invalid data from API.');
-                }
-
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                alert(`Could not fetch video data. ${error.message}. Please check the URL or try again later.`);
-                document.getElementById('statsContainer').style.display = 'none'; // Hide stats on error
-                const progressBarWrapper = document.getElementById('progressBarWrapper');
-                if (progressBarWrapper) progressBarWrapper.style.display = 'none'; // Hide progress bar
-                return false; // Indicate failure
-            } finally {
-                 searchButton.innerText = '🚀 Get Video Stats!';
-                 searchButton.disabled = false;
-            }
-        }
-
-        function displayData(data) {
-            if (musicAudio && !musicAudio.paused) {
-                musicAudio.pause();
-                musicAudio.currentTime = 0;
-            }
-            musicAudio = null; 
-            document.getElementById('playButton').innerText = '▶️ Play Music';
-
-            document.getElementById('statsContainer').style.display = 'block';
-            const progressBarWrapper = document.getElementById('progressBarWrapper');
-            if (progressBarWrapper) { // Ensure progress bar is visible when stats are
-                progressBarWrapper.style.display = 'block';
-            }
-
-            document.getElementById('creator').innerText = data.creator || 'N/A';
-            document.getElementById('desc').innerText = data.desc || 'No description';
-            document.getElementById('date').innerText = data.create_date || 'Unknown date';
-            document.getElementById('cover').src = data.cover || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-
-            const downloadLink = document.getElementById('download');
-            const downloadMP3Link = document.getElementById('downloadMP3');
-            const playButton = document.getElementById('playButton');
-            const musicInfoSection = document.getElementById('musicInfoSection');
-
-            if(data.download_link){
-                downloadLink.href = data.download_link;
-                downloadLink.style.display = 'block';
-            } else {
-                downloadLink.style.display = 'none';
-            }
-
-            if(data.music_play_url && data.music_title) { 
-                document.getElementById('music_title').innerText = data.music_title || 'Unknown Title';
-                document.getElementById('music_artist').innerText = data.music_artist || 'Unknown Artist';
-                downloadMP3Link.href = data.music_play_url;
-                
-                musicInfoSection.style.display = 'block';
-                downloadMP3Link.style.display = 'block';
-                playButton.style.display = 'block';
-            } else {
-                musicInfoSection.style.display = 'none';
-                downloadMP3Link.style.display = 'none';
-                playButton.style.display = 'none';
-            }
-            
-            animateCounter(document.getElementById('views'), data.plays, lastStats.views);
-            animateCounter(document.getElementById('likes'), data.likes, lastStats.likes);
-            animateCounter(document.getElementById('shares'), data.shares, lastStats.shares);
-            animateCounter(document.getElementById('comments'), data.comments, lastStats.comments);
-
-            lastStats.views = Number(data.plays) || 0;
-            lastStats.likes = Number(data.likes) || 0;
-            lastStats.shares = Number(data.shares) || 0;
-            lastStats.comments = Number(data.comments) || 0;
-        }
-
-        function startFetchingData() {
-            const urlInput = document.getElementById('videoUrl').value;
-            if (!urlInput.match(/video\/(\d+)/)) {
-                alert('Invalid TikTok URL. Please paste a valid video link!');
-                return;
-            }
-
-            if (intervalId) { 
-                clearInterval(intervalId);
-                intervalId = null; // Explicitly nullify
-            }
-            
-            fetchVideoData().then(success => {
-                if (success && document.getElementById('statsContainer').style.display === 'block') {
-                    updateProgressBar(); 
-                    intervalId = setInterval(async () => {
-                        const fetchSuccess = await fetchVideoData();
-                        if (fetchSuccess && intervalId) { // Ensure interval hasn't been cleared elsewhere
-                            updateProgressBar(); 
-                        } else if (!fetchSuccess && intervalId) {
-                            // Optionally stop interval on repeated failures or just let it try again
-                            // For now, it will keep trying and resetting progress bar if interval is still set
-                            updateProgressBar(); // Or hide it: document.getElementById('progressBarWrapper').style.display = 'none';
-                        }
-                    }, REFRESH_INTERVAL_MS);
-                } else if (!success) {
-                    const progressBarWrapper = document.getElementById('progressBarWrapper');
-                    if (progressBarWrapper) progressBarWrapper.style.display = 'none';
-                    if (intervalId) { // If initial fetch failed but interval was somehow set, clear it
-                         clearInterval(intervalId);
-                         intervalId = null;
-                    }
-                }
-            });
-        }
-
-        function stopFetchingData() { 
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-            const progressBarWrapper = document.getElementById('progressBarWrapper');
-            const progressBarFill = document.getElementById('refreshProgressBar');
-            if (progressBarWrapper) progressBarWrapper.style.display = 'none';
-            if (progressBarFill) {
-                progressBarFill.style.transition = 'none';
-                progressBarFill.style.width = '0%';
-            }
-        }
-
-        function playMusic() {
-            const musicUrl = document.getElementById('downloadMP3').href;
-            const playButton = document.getElementById('playButton');
-
-            if (!musicUrl || musicUrl === window.location.href + '#') { 
-                alert("No music URL available for this video.");
-                return;
-            }
-
-            if (musicAudio && !musicAudio.paused) {
-                musicAudio.pause();
-                playButton.innerText = "▶️ Play Music";
-            } else {
-                if (!musicAudio || musicAudio.src !== musicUrl) { 
-                    musicAudio = new Audio(musicUrl);
-                    musicAudio.onended = function() { // Moved onended here
-                        playButton.innerText = "▶️ Play Music";
-                        if(musicAudio) musicAudio.currentTime = 0; 
-                    };
-                }
-                musicAudio.play().then(() => {
-                    playButton.innerText = "⏹️ Stop Music";
-                }).catch(error => {
-                    console.error("Error playing music:", error);
-                    alert("Could not play music. The audio format might not be supported or the link is broken.");
-                    playButton.innerText = "▶️ Play Music"; 
-                });
-            }
-        }
-    </script>
 </body>
 </html>
