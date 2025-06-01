@@ -540,7 +540,7 @@
                 const data = await response.json();
 
                 // Check for success or if status is missing but data is present
-                if (data && (data.status === 'success' || data.status === undefined) && data.creator) {
+                if (data && data.status !== 'error' && data.creator) {
                   displayData(data);
                   saveHistory(data); // Save history on successful fetch
                   return true; // Indicate success
