@@ -449,9 +449,9 @@
         let lastStats = { views: 0, likes: 0, shares: 0, comments: 0 };
         let intervalId;
  let musicAudio = null;
-        const API_BASE_URL = 'https://countik.com/api/videoinfo/'; 
+        const API_BASE_URL = 'https://countik.com/api/videoinfo/';
         const ANIMATION_DURATION_MS = 500; 
-        const REFRESH_INTERVAL_MS = 10000; // 10 seconds
+        const REFRESH_INTERVAL_MS = 20000; // 20 seconds
 
         function animateCounter(element, target, previous) {
             target = Number(target) || 0;
@@ -471,8 +471,8 @@
                 }, ANIMATION_DURATION_MS);
 
                 let current = previous;
-                const steps = 30; 
-                const durationPerStep = Math.max(15, (ANIMATION_DURATION_MS - 50) / steps); 
+                const steps = 30;
+                const durationPerStep = Math.max(15, (ANIMATION_DURATION_MS - 50) / steps);
                 const increment = (target - previous) / steps;
 
                 if (element.animationInterval) {
@@ -503,9 +503,9 @@
             const progressBarWrapper = document.getElementById('progressBarWrapper');
 
             if (progressBarFill && progressBarWrapper) {
-                progressBarWrapper.style.display = 'block'; 
-                progressBarFill.style.transition = 'none'; 
-                progressBarFill.style.width = '0%'; 
+                progressBarWrapper.style.display = 'block';
+                progressBarFill.style.transition = 'none';
+                progressBarFill.style.width = '0%';
 
                 // Force reflow to apply the reset width before starting animation
                 void progressBarFill.offsetWidth; // Using void for linters
@@ -540,7 +540,7 @@
                 const data = await response.json();
 
                 // Check for success or if status is missing but data is present
-                if (data && (data.status === 'success' || data.status === undefined) && data.creator) { 
+                if (data && (data.status === 'success' || data.status === undefined) && data.creator) {
                   displayData(data);
                   saveHistory(data); // Save history on successful fetch
                   return true; // Indicate success
@@ -568,7 +568,7 @@
                 musicAudio.pause();
                 musicAudio.currentTime = 0;
             }
-            musicAudio = null; 
+            musicAudio = null;
             document.getElementById('playButton').innerText = '▶️ Play Music';
 
             document.getElementById('statsContainer').style.display = 'block';
@@ -595,7 +595,7 @@
                 downloadLink.style.display = 'none';
             }
 
-            if(data.music_play_url && data.music_title) { 
+            if(data.music_play_url && data.music_title) {
                 document.getElementById('music_title').innerText = data.music_title || 'Unknown Title';
                 document.getElementById('music_artist').innerText = data.music_artist || 'Unknown Artist';
                 downloadMP3Link.href = data.music_play_url;
@@ -608,7 +608,7 @@
                 downloadMP3Link.style.display = 'none';
                 playButton.style.display = 'none';
             }
-            
+
             animateCounter(document.getElementById('views'), data.plays, lastStats.views);
             animateCounter(document.getElementById('likes'), data.likes, lastStats.likes);
             animateCounter(document.getElementById('shares'), data.shares, lastStats.shares);
@@ -628,11 +628,11 @@
                 return;
             }
 
-            if (intervalId) { 
+            if (intervalId) {
                 clearInterval(intervalId);
                 intervalId = null; // Explicitly nullify
             }
-            
+
             fetchVideoData().then(success => {
                 if (success && document.getElementById('statsContainer').style.display === 'block') {
                     updateProgressBar(); 
@@ -640,7 +640,7 @@
                         const fetchSuccess = await fetchVideoData();
                         if (fetchSuccess && intervalId) { // Ensure interval hasn't been cleared elsewhere
                             updateProgressBar(); 
-                        } else if (!fetchSuccess && intervalId) {
+                        } else if (!fetchSuccess) { // If fetch failed, stop the interval
                             // Optionally stop interval on repeated failures or just let it try again
                             // For now, it will keep trying and resetting progress bar if interval is still set
                             updateProgressBar(); // Or hide it: document.getElementById('progressBarWrapper').style.display = 'none';
@@ -658,7 +658,7 @@
         }
 
         // Function to stop fetching data and clear the interval
-        function stopFetchingData() { 
+        function stopFetchingData() {
             if (intervalId) {
                 clearInterval(intervalId);
                 intervalId = null;
@@ -677,7 +677,7 @@
             const musicUrl = document.getElementById('downloadMP3').href;
             const playButton = document.getElementById('playButton');
 
-            if (!musicUrl || musicUrl === window.location.href + '#') { 
+            if (!musicUrl || musicUrl === window.location.href + '#') {
                 alert("No music URL available for this video.");
                 return;
             }
@@ -686,14 +686,14 @@
                 musicAudio.pause();
                 playButton.innerText = "▶️ Play Music";
             } else {
-                if (!musicAudio || musicAudio.src !== musicUrl) { 
+                if (!musicAudio || musicAudio.src !== musicUrl) {
                     musicAudio = new Audio(musicUrl);
                     musicAudio.onended = function() { // Moved onended here
                         playButton.innerText = "▶️ Play Music";
-                        if(musicAudio) musicAudio.currentTime = 0; 
+                        if(musicAudio) musicAudio.currentTime = 0;
                     };
                 }
-                musicAudio.play().then(() => {
+                musicAudio.play().then(() => { // Use promise-based play for better error handling
                     playButton.innerText = "⏹️ Stop Music";
                 }).catch(error => {
                     console.error("Error playing music:", error);
@@ -784,7 +784,7 @@
         // Helper function to format time ago
         function timeSince(date) {
             // Basic implementation - can be expanded for more detail
-            const seconds = Math.floor((new Date() - date) / 1000);
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000); // Ensure date is treated as Date object
             if (seconds < 60) return `${seconds} second${seconds === 1 ? '' : 's'}`;
             const minutes = Math.floor(seconds / 60);
             if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'}`;
