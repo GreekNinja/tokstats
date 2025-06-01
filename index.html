@@ -3,38 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚀 TikTok Turbo Stats 🎮</title>
+    <title>🚀 TikTok Turbo Stats 🎮 v2</title>
     <style>
         @import url('https://fonts.cdnfonts.com/css/burbank-big-condensed');
 
         :root {
             --font-primary: 'Burbank Big Condensed', sans-serif;
-            --color-bg-gradient-start: #6a11cb; /* Vibrant Purple */
-            --color-bg-gradient-end: #2575fc;   /* Bright Blue */
+            --color-bg-gradient-start: #5D3FD3; /* Deeper Purple */
+            --color-bg-gradient-end: #1E90FF;   /* Dodger Blue */
             --color-text-light: #ffffff;
             --color-text-secondary: #e0e0e0;
-            --color-container-bg: rgba(0, 0, 0, 0.25);
-            --color-container-border: rgba(255, 255, 255, 0.3);
-            --color-container-shadow-main: rgba(255, 105, 180, 0.7); /* Hot Pink Glow */
-            --color-container-shadow-inset: rgba(0, 255, 255, 0.5); /* Cyan Inner Glow */
+            
+            --color-container-bg: rgba(0, 0, 0, 0.3);
+            --color-container-border: rgba(255, 255, 255, 0.35);
+            --color-container-shadow-main: rgba(255, 105, 180, 0.75); /* Hot Pink Glow */
+            --color-container-shadow-main-brighter: rgba(255, 105, 180, 0.95); /* Brighter for animation */
+            --color-container-shadow-inset: rgba(0, 255, 255, 0.55); /* Cyan Inner Glow */
 
             --color-button-gradient-start: #FF1493; /* DeepPink */
             --color-button-gradient-end: #FF69B4;   /* HotPink */
-            --color-button-shadow-3d: #c21278; /* Darker pink for 3D effect */
-            --color-button-hover-start: #f0138a;
-            --color-button-hover-end: #f060a9;
+            --color-button-shadow-3d: #b3006e; /* Darker pink for 3D effect */
+            --color-button-hover-start: #ff0084;
+            --color-button-hover-end: #ff55a8;
             
-            --color-stat-bg: rgba(255, 255, 255, 0.1);
-            --color-stat-shadow: rgba(0, 255, 255, 0.6); /* Cyan Glow for stats */
-            --color-stat-hover-shadow: rgba(255, 0, 255, 0.8); /* Pink Glow for stats hover */
+            --color-stat-bg: rgba(255, 255, 255, 0.12);
+            --color-stat-shadow: rgba(0, 255, 255, 0.65); 
+            --color-stat-hover-shadow: rgba(255, 0, 255, 0.85);
             
-            --color-input-bg: rgba(0, 0, 0, 0.35);
+            --color-input-bg: rgba(0, 0, 0, 0.4);
             --color-input-border: rgba(255, 255, 255, 0.4);
+            --color-input-focus-border: var(--color-stat-hover-shadow);
+            --color-input-focus-shadow: var(--color-stat-hover-shadow);
 
             --color-update-increase: #39FF14; /* Neon Green */
             --color-update-decrease: #FFD700; /* Gold/Yellow */
+            --progress-bar-gradient-start: var(--color-update-decrease);
+            --progress-bar-gradient-end: var(--color-update-increase);
+
 
             --animation-duration-fast: 0.5s;
+            --animation-duration-medium: 0.3s;
+        }
+
+        html {
+            box-sizing: border-box;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
         }
 
         body {
@@ -49,225 +64,292 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-sizing: border-box;
         }
         
         .container {
-            max-width: 650px;
-            width: 90%;
-            margin: auto;
+            max-width: 680px; /* Slightly wider */
+            width: 95%;
+            margin: 20px auto; /* Added top/bottom margin */
             background: var(--color-container-bg);
-            padding: 25px 30px;
-            border-radius: 25px;
-            box-shadow: 0 0 30px var(--color-container-shadow-main),
-                        0 0 20px var(--color-container-shadow-inset) inset;
-            backdrop-filter: blur(12px);
+            padding: 30px 35px; /* Increased padding */
+            border-radius: 30px; /* More rounded */
             border: 2px solid var(--color-container-border);
+            backdrop-filter: blur(14px);
+            animation: subtleGlow 6s infinite alternate ease-in-out;
+        }
+
+        @keyframes subtleGlow {
+            0% { 
+                box-shadow: 0 0 25px var(--color-container-shadow-main),
+                            0 0 15px var(--color-container-shadow-inset) inset,
+                            0 0 40px rgba(30, 144, 255, 0.5); /* Dodger blue subtle outer glow */
+            }
+            100% { 
+                box-shadow: 0 0 35px var(--color-container-shadow-main-brighter),
+                            0 0 25px var(--color-container-shadow-inset) inset,
+                            0 0 50px rgba(30, 144, 255, 0.7);
+            }
         }
 
         h2 {
-            font-size: 38px; /* Slightly adjusted for responsiveness */
-            text-shadow: 3px 3px 0px #003366, /* Darker blue outline */
-                         5px 5px 0px var(--color-button-gradient-start); /* Pink shadow offset */
-            margin-bottom: 30px;
+            font-size: 40px; 
+            margin-bottom: 35px;
             letter-spacing: 1.5px;
             line-height: 1.2;
+            font-weight: 700; /* Bolder font if available */
+            text-shadow: 3px 3px 0px #333, /* Darker, more defined shadow */
+                         0 0 15px rgba(255,255,255,0.3); /* Soft white aura */
+            background: linear-gradient(45deg, var(--color-button-gradient-end), var(--color-text-light), var(--color-button-gradient-start), var(--color-text-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 300% 300%;
+            animation: titleGradient 10s infinite ease-in-out alternate;
+        }
+        @keyframes titleGradient {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        input[type="text"] {
+            width: calc(90% - 32px); 
+            padding: 16px; 
+            border-radius: 16px; /* More rounded */
+            border: 2px solid var(--color-input-border);
+            outline: none;
+            background: var(--color-input-bg);
+            color: var(--color-text-light);
+            text-align: center;
+            font-size: 18px; 
+            font-family: var(--font-primary);
+            margin-bottom: 20px; /* Increased margin */
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
+            transition: border-color var(--animation-duration-medium), box-shadow var(--animation-duration-medium);
+        }
+        input[type="text"]::placeholder {
+            color: rgba(255,255,255,0.6);
+            font-family: var(--font-primary);
+        }
+        input[type="text"]:focus {
+            border-color: var(--color-input-focus-border); 
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 0 12px var(--color-input-focus-shadow);
+        }
+
+
+        .progress-bar-wrapper {
+            margin: 25px auto 20px auto; 
+            width: 90%;
+        }
+        .progress-bar-label {
+            font-size: 17px; /* Slightly larger */
+            color: var(--color-text-secondary);
+            margin-bottom: 10px; /* Increased space */
+            text-align: left;
+            font-family: var(--font-primary);
+            letter-spacing: 0.5px;
+            font-weight: bold;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 14px; /* Thicker bar */
+            background-color: rgba(0, 0, 0, 0.5); /* Darker */
+            border-radius: 7px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.25); 
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); /* Inner shadow */
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%; 
+            background: linear-gradient(90deg, var(--progress-bar-gradient-start), var(--progress-bar-gradient-end)); 
+            border-radius: 6px; 
+            /* transition set by JS */
+            box-shadow: 0 0 8px var(--progress-bar-gradient-end), /* Glow from the fill color */
+                        inset 0 -1px 1px rgba(0,0,0,0.25), 
+                        inset 0 1px 1px rgba(255,255,255,0.25); 
+        }
+
+
+        a, button {
+            display: block;
+            margin: 18px auto; /* Increased margin */
+            padding: 18px 15px; 
+            background: linear-gradient(135deg, var(--color-button-gradient-start), var(--color-button-gradient-end));
+            color: var(--color-text-light);
+            text-decoration: none;
+            border-radius: 16px; 
+            font-weight: bold;
+            width: 90%;
+            text-align: center;
+            font-size: 21px; 
+            border: none; 
+            outline: none;
+            cursor: pointer;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.35);
+            box-shadow: 0 6px 0 var(--color-button-shadow-3d), 
+                        0 9px 20px rgba(var(--color-button-gradient-start), 0.45);
+            letter-spacing: 0.5px;
+            position: relative; /* For shimmer effect */
+            overflow: hidden; /* For shimmer effect */
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                        box-shadow 0.15s ease, 
+                        background 0.2s ease;
+        }
+        /* Shimmer Effect */
+        a::before, button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%; /* Start further left */
+            width: 70%; /* Wider shimmer */
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            transform: skewX(-25deg); /* Angled shimmer */
+            transition: left 0.7s ease-in-out; /* Slower, smoother transition */
+        }
+        a:hover::before, button:hover::before {
+            left: 150%; /* Move further right */
+        }
+
+        a:hover, button:hover {
+            transform: scale(1.04) translateY(-4px); 
+            box-shadow: 0 8px 0 var(--color-button-shadow-3d), 
+                        0 12px 25px rgba(var(--color-button-gradient-start), 0.7);
+            background: linear-gradient(135deg, var(--color-button-hover-start), var(--color-button-hover-end));
+        }
+        a:active, button:active {
+            transform: scale(0.97) translateY(2px); 
+            box-shadow: 0 3px 0 var(--color-button-shadow-3d),
+                        0 6px 15px rgba(var(--color-button-gradient-start), 0.5);
+        }
+
+
+        #statsContainer {
+            display: none;
+            animation: fadeInStats 0.8s ease-out forwards;
+            margin-top: 20px; /* Space above stats */
+        }
+        @keyframes fadeInStats {
+            from { opacity: 0; transform: translateY(25px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        img#cover {
+            width: 190px; 
+            height: 190px;
+            border-radius: 22px; 
+            margin-top: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.75), 0 0 35px rgba(255, 0, 255, 0.55);
+            border: 5px solid var(--color-text-light); /* Thicker border */
+            transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+            object-fit: cover;
+        }
+        img#cover:hover {
+            transform: scale(1.08) rotate(4deg); 
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.9), 0 0 45px rgba(255, 0, 255, 0.75), 0 0 15px #fff; /* Added white glow */
+        }
+
+        .info {
+            font-size: 19px; 
+            margin: 18px 0;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            word-break: break-word;
+        }
+        .info strong {
+            color: var(--color-text-light);
+            font-weight: bold; /* Ensure strong is bold */
         }
 
         .stats {
             display: flex;
             justify-content: space-around;
-            margin-top: 25px;
-            margin-bottom: 15px;
+            margin-top: 30px; /* More space */
+            margin-bottom: 20px;
             flex-wrap: wrap;
-            gap: 15px; /* Spacing between stat boxes */
+            gap: 18px; /* Slightly more gap */
         }
 
         .stats div {
-            font-size: 28px; /* Base size for icon */
-            padding: 15px;
+            font-size: 30px; 
+            padding: 18px; /* More padding */
             background: var(--color-stat-bg);
-            border-radius: 15px;
-            box-shadow: 0 0 12px var(--color-stat-shadow);
-            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), /* Bouncy hover */
-                        box-shadow 0.25s ease-in-out;
-            flex-basis: calc(50% - 20px); /* Try to fit two per row, accounting for gap */
-            min-width: 130px; /* Ensure items don't get too small */
-            max-width: 160px;
-            box-sizing: border-box;
+            border-radius: 18px; /* More rounded */
+            box-shadow: 0 0 14px var(--color-stat-shadow), inset 0 0 8px rgba(0,0,0,0.3); /* Added inset shadow */
+            transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), /* Different bounce */
+                        box-shadow 0.28s ease-in-out;
+            flex-basis: calc(50% - 22px); 
+            min-width: 135px; 
+            max-width: 170px;
         }
 
         .stats div:hover {
-            transform: scale(1.12);
-            box-shadow: 0 0 22px var(--color-stat-hover-shadow), 
-                        0 0 10px rgba(255, 255, 255, 0.3) inset;
+            transform: scale(1.14) rotate(-2deg); /* Added slight rotation */
+            box-shadow: 0 0 25px var(--color-stat-hover-shadow), 
+                        0 0 12px rgba(255, 255, 255, 0.35) inset, /* Brighter inset */
+                        0 5px 15px rgba(0,0,0,0.2); /* Subtle drop shadow */
         }
 
-        .stats p { /* Label like "Views", "Likes" */
-            font-size: 16px; /* Slightly smaller for better fit */
-            margin: 8px 0 5px 0;
+        .stats p { 
+            font-size: 17px; 
+            margin: 9px 0 6px 0;
             font-weight: bold;
             color: var(--color-text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.7px; /* More spacing */
         }
-        .stats div p:last-of-type { /* The number itself */
-            font-size: 30px; /* Slightly smaller for better fit */
+        .stats div p:last-of-type { 
+            font-size: 32px; 
             font-weight: bold;
             color: var(--color-text-light);
             line-height: 1;
-            min-height: 30px; /* Prevent layout shift during count */
-            word-break: break-all; /* Prevent long numbers from breaking layout */
-        }
-
-        .info {
-            font-size: 18px; /* Adjusted for readability */
-            margin: 15px 0;
-            color: var(--color-text-secondary);
-            line-height: 1.5;
-            word-break: break-word;
-        }
-        .info strong {
-            color: var(--color-text-light);
-        }
-
-        img#cover {
-            width: 180px; 
-            height: 180px;
-            border-radius: 20px; 
-            margin-top: 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 0 18px rgba(0, 255, 255, 0.7), 0 0 30px rgba(255, 0, 255, 0.5);
-            border: 4px solid var(--color-text-light);
-            transition: transform 0.35s ease-in-out;
-            object-fit: cover;
-        }
-        img#cover:hover {
-            transform: scale(1.07) rotate(3deg); /* Playful hover */
-        }
-
-        a, button {
-            display: block;
-            margin: 15px auto;
-            padding: 16px 15px; /* Slightly adjusted padding */
-            background: linear-gradient(135deg, var(--color-button-gradient-start), var(--color-button-gradient-end));
-            color: var(--color-text-light);
-            text-decoration: none;
-            border-radius: 14px; /* Chunky buttons */
-            font-weight: bold;
-            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, background 0.2s ease;
-            width: 88%;
-            text-align: center;
-            font-size: 20px; /* Adjusted font size */
-            border: none; 
-            outline: none;
-            cursor: pointer;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-            box-shadow: 0 5px 0 var(--color-button-shadow-3d), /* 3D effect */
-                        0 8px 18px rgba(255, 0, 255, 0.4);
-            letter-spacing: 0.5px;
-            box-sizing: border-box;
-        }
-
-        a:hover, button:hover {
-            transform: scale(1.03) translateY(-3px); 
-            box-shadow: 0 7px 0 var(--color-button-shadow-3d), 
-                        0 10px 22px rgba(255, 0, 255, 0.7);
-            background: linear-gradient(135deg, var(--color-button-hover-start), var(--color-button-hover-end));
-        }
-        a:active, button:active {
-            transform: scale(0.98) translateY(1px); 
-            box-shadow: 0 3px 0 var(--color-button-shadow-3d),
-                        0 5px 12px rgba(255, 0, 255, 0.5);
-        }
-
-        input[type="text"] {
-            width: calc(88% - 32px); /* Adjust for padding and border */
-            padding: 15px; /* Adjusted padding */
-            border-radius: 14px;
-            border: none; 
-            outline: none;
-            background: var(--color-input-bg);
-            color: var(--color-text-light);
-            text-align: center;
-            font-size: 18px; /* Adjusted font size */
-            font-family: var(--font-primary);
-            margin-bottom: 15px;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
-            border: 2px solid var(--color-input-border);
-            box-sizing: border-box;
-        }
-        input[type="text"]::placeholder {
-            color: rgba(255,255,255,0.5);
-            font-family: var(--font-primary);
-        }
-
-        #statsContainer {
-            display: none;
-            animation: fadeInStats 0.7s ease-out forwards;
-        }
-
-        @keyframes fadeInStats {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            min-height: 32px; 
+            word-break: break-all; 
         }
         
-        .stat-value-changing { /* Applied to the <p> holding the number */
+        .stat-value-changing { 
             animation: valueUpdateEffect var(--animation-duration-fast) ease-in-out;
             display: inline-block; 
         }
-
         @keyframes valueUpdateEffect {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.35); 
-                color: var(--dynamic-update-color, var(--color-button-gradient-start)); 
-                text-shadow: 0 0 10px var(--dynamic-update-color, var(--color-button-gradient-start));
-            }
+            0%, 100% { transform: scale(1) translateY(0); opacity: 1;}
+            30% { transform: scale(1.1) translateY(-3px); opacity: 0.7;}
+            60% { transform: scale(1.45) translateY(0px); opacity: 1; color: var(--dynamic-update-color, var(--color-button-gradient-start)); text-shadow: 0 0 12px var(--dynamic-update-color, var(--color-button-gradient-start));}
         }
+
 
         /* Responsive adjustments */
-        @media (max-width: 600px) {
-            h2 {
-                font-size: 30px;
-            }
-            .stats div {
-                flex-basis: calc(50% - 10px); /* Adjust for smaller screens */
-                min-width: 120px;
-                font-size: 24px; /* Icon size */
-            }
-            .stats p {
-                font-size: 14px;
-            }
-            .stats div p:last-of-type {
-                font-size: 26px;
-            }
-            img#cover {
-                width: 150px;
-                height: 150px;
-            }
-            a, button {
-                font-size: 18px;
-                padding: 14px 12px;
-            }
-            input[type="text"] {
-                font-size: 16px;
-                padding: 12px;
-            }
-            .info {
-                font-size: 16px;
-            }
+        @media (max-width: 700px) {
+            .container { padding: 25px 20px; }
+            h2 { font-size: 34px; margin-bottom: 30px; }
+            .stats div { flex-basis: calc(50% - 15px); }
         }
-        @media (max-width: 400px) {
+        @media (max-width: 600px) {
+            h2 { font-size: 30px; }
             .stats div {
-                flex-basis: 100%; /* Stack stat items on very small screens */
-                max-width: none;
+                min-width: 125px;
+                font-size: 26px; 
             }
-            h2 {
-                font-size: 26px;
+            .stats p { font-size: 15px; }
+            .stats div p:last-of-type { font-size: 28px; }
+            img#cover { width: 160px; height: 160px; }
+            a, button { font-size: 19px; padding: 15px 12px; }
+            input[type="text"] { font-size: 17px; padding: 14px; }
+            .info { font-size: 17px; }
+            .progress-bar-label {font-size: 15px;}
+            .progress-bar-container {height: 12px;}
+        }
+        @media (max-width: 450px) {
+            .container { padding: 20px 15px; }
+            h2 { font-size: 26px; letter-spacing: 1px;}
+            .stats div {
+                flex-basis: 100%; 
+                max-width: 280px; /* Allow full width but cap it */
+                margin-left: auto;
+                margin-right: auto;
             }
+            input[type="text"], a, button { width: 95%; }
+            .progress-bar-wrapper { width: 95%;}
         }
 
     </style>
@@ -277,6 +359,13 @@
         <h2>📊 TikTok Turbo Stats 🎮</h2>
         <input type="text" id="videoUrl" placeholder="Paste TikTok Video URL Here!">
         <button id="searchButton" onclick="startFetchingData()">🚀 Get Video Stats!</button>
+
+        <div class="progress-bar-wrapper" id="progressBarWrapper" style="display: none;">
+            <p class="progress-bar-label">Next refresh in:</p>
+            <div class="progress-bar-container">
+                <div id="refreshProgressBar" class="progress-bar-fill"></div>
+            </div>
+        </div>
         
         <div id="statsContainer">
             <img id="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Video Cover"> <p class="info"><strong>Creator:</strong> <span id="creator">-</span></p>
@@ -303,6 +392,7 @@
         let musicAudio = null;
         const API_BASE_URL = 'https://countik.com/api/videoinfo/'; 
         const ANIMATION_DURATION_MS = 500; 
+        const REFRESH_INTERVAL_MS = 10000; // 10 seconds
 
         function animateCounter(element, target, previous) {
             target = Number(target) || 0;
@@ -347,13 +437,31 @@
                 element.innerText = target.toLocaleString();
             }
         }
+        
+        function updateProgressBar() {
+            const progressBarFill = document.getElementById('refreshProgressBar');
+            const progressBarWrapper = document.getElementById('progressBarWrapper');
+
+            if (progressBarFill && progressBarWrapper) {
+                progressBarWrapper.style.display = 'block'; 
+                progressBarFill.style.transition = 'none'; 
+                progressBarFill.style.width = '0%'; 
+
+                // Force reflow to apply the reset width before starting animation
+                void progressBarFill.offsetWidth; // Using void for linters
+
+                progressBarFill.style.transition = `width ${REFRESH_INTERVAL_MS / 1000}s linear`;
+                progressBarFill.style.width = '100%';
+            }
+        }
 
         async function fetchVideoData() {
             const urlInput = document.getElementById('videoUrl').value;
             const match = urlInput.match(/video\/(\d+)/);
             if (!match) {
-                alert('Invalid TikTok URL. Please paste a valid video link!');
-                return;
+                // Alert is handled by startFetchingData or directly if called without it
+                // alert('Invalid TikTok URL. Please paste a valid video link!');
+                return false; // Indicate failure
             }
             const videoId = match[1];
             
@@ -364,20 +472,26 @@
             try {
                 const response = await fetch(`${API_BASE_URL}${videoId}`);
                 if (!response.ok) {
-                    const errorData = await response.text(); // Try to get more error info
-                    throw new Error(`API request failed: ${response.status} ${response.statusText}. Response: ${errorData}`);
+                    const errorText = await response.text();
+                    console.error(`API Error Response: ${errorText}`);
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
                 }
                 const data = await response.json();
 
-                if (data && data.status !== 'error') { 
+                if (data && (data.status === 'success' || data.status === undefined) && data.creator) { // Check for success or if status is missing but data is present
                   displayData(data);
+                  return true; // Indicate success
                 } else {
-                  throw new Error(data.message || 'Empty or error data received from API');
+                  throw new Error(data.message || 'Video not found or invalid data from API.');
                 }
 
             } catch (error) {
                 console.error('Error fetching data:', error);
-                alert(`Could not fetch video data. ${error.message}. Please try again later.`);
+                alert(`Could not fetch video data. ${error.message}. Please check the URL or try again later.`);
+                document.getElementById('statsContainer').style.display = 'none'; // Hide stats on error
+                const progressBarWrapper = document.getElementById('progressBarWrapper');
+                if (progressBarWrapper) progressBarWrapper.style.display = 'none'; // Hide progress bar
+                return false; // Indicate failure
             } finally {
                  searchButton.innerText = '🚀 Get Video Stats!';
                  searchButton.disabled = false;
@@ -393,6 +507,11 @@
             document.getElementById('playButton').innerText = '▶️ Play Music';
 
             document.getElementById('statsContainer').style.display = 'block';
+            const progressBarWrapper = document.getElementById('progressBarWrapper');
+            if (progressBarWrapper) { // Ensure progress bar is visible when stats are
+                progressBarWrapper.style.display = 'block';
+            }
+
             document.getElementById('creator').innerText = data.creator || 'N/A';
             document.getElementById('desc').innerText = data.desc || 'No description';
             document.getElementById('date').innerText = data.create_date || 'Unknown date';
@@ -410,7 +529,7 @@
                 downloadLink.style.display = 'none';
             }
 
-            if(data.music_play_url && data.music_title) { // Ensure title exists too for music section
+            if(data.music_play_url && data.music_title) { 
                 document.getElementById('music_title').innerText = data.music_title || 'Unknown Title';
                 document.getElementById('music_artist').innerText = data.music_artist || 'Unknown Artist';
                 downloadMP3Link.href = data.music_play_url;
@@ -436,34 +555,74 @@
         }
 
         function startFetchingData() {
+            const urlInput = document.getElementById('videoUrl').value;
+            if (!urlInput.match(/video\/(\d+)/)) {
+                alert('Invalid TikTok URL. Please paste a valid video link!');
+                return;
+            }
+
             if (intervalId) { 
                 clearInterval(intervalId);
+                intervalId = null; // Explicitly nullify
             }
-            fetchVideoData(); 
-            intervalId = setInterval(fetchVideoData, 10000); 
+            
+            fetchVideoData().then(success => {
+                if (success && document.getElementById('statsContainer').style.display === 'block') {
+                    updateProgressBar(); 
+                    intervalId = setInterval(async () => {
+                        const fetchSuccess = await fetchVideoData();
+                        if (fetchSuccess && intervalId) { // Ensure interval hasn't been cleared elsewhere
+                            updateProgressBar(); 
+                        } else if (!fetchSuccess && intervalId) {
+                            // Optionally stop interval on repeated failures or just let it try again
+                            // For now, it will keep trying and resetting progress bar if interval is still set
+                            updateProgressBar(); // Or hide it: document.getElementById('progressBarWrapper').style.display = 'none';
+                        }
+                    }, REFRESH_INTERVAL_MS);
+                } else if (!success) {
+                    const progressBarWrapper = document.getElementById('progressBarWrapper');
+                    if (progressBarWrapper) progressBarWrapper.style.display = 'none';
+                    if (intervalId) { // If initial fetch failed but interval was somehow set, clear it
+                         clearInterval(intervalId);
+                         intervalId = null;
+                    }
+                }
+            });
         }
 
-        function stopFetchingData() { // This function is available if needed, e.g., for a stop button
-            clearInterval(intervalId);
-            intervalId = null;
+        function stopFetchingData() { 
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+            const progressBarWrapper = document.getElementById('progressBarWrapper');
+            const progressBarFill = document.getElementById('refreshProgressBar');
+            if (progressBarWrapper) progressBarWrapper.style.display = 'none';
+            if (progressBarFill) {
+                progressBarFill.style.transition = 'none';
+                progressBarFill.style.width = '0%';
+            }
         }
 
         function playMusic() {
             const musicUrl = document.getElementById('downloadMP3').href;
             const playButton = document.getElementById('playButton');
 
-            if (!musicUrl || musicUrl === window.location.href + '#') { // More robust check for empty href
+            if (!musicUrl || musicUrl === window.location.href + '#') { 
                 alert("No music URL available for this video.");
                 return;
             }
 
             if (musicAudio && !musicAudio.paused) {
                 musicAudio.pause();
-                // musicAudio.currentTime = 0; // Not strictly needed if creating new audio object or reusing.
                 playButton.innerText = "▶️ Play Music";
             } else {
                 if (!musicAudio || musicAudio.src !== musicUrl) { 
                     musicAudio = new Audio(musicUrl);
+                    musicAudio.onended = function() { // Moved onended here
+                        playButton.innerText = "▶️ Play Music";
+                        if(musicAudio) musicAudio.currentTime = 0; 
+                    };
                 }
                 musicAudio.play().then(() => {
                     playButton.innerText = "⏹️ Stop Music";
@@ -472,12 +631,6 @@
                     alert("Could not play music. The audio format might not be supported or the link is broken.");
                     playButton.innerText = "▶️ Play Music"; 
                 });
-
-                // Event listener to reset button when music ends
-                musicAudio.onended = function() {
-                    playButton.innerText = "▶️ Play Music";
-                    musicAudio.currentTime = 0; // Reset for next play
-                };
             }
         }
     </script>
