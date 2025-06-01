@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 TikTok Turbo Stats 🎮</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
+        @import url('https://fonts.cdnfonts.com/css/burbank-big-condensed');
+
+        :root {
+            --font-primary: 'Burbank Big Condensed', sans-serif;
+            --color-bg-gradient-start: #6a11cb; /* Vibrant Purple */
+            --color-bg-gradient-end: #2575fc;   /* Bright Blue */
+            --color-text-light: #ffffff;
+            --color-text-secondary: #e0e0e0;
+            --color-container-bg: rgba(0, 0, 0, 0.25);
+            --color-container-border: rgba(255, 255, 255, 0.3);
+            --color-container-shadow-main: rgba(255, 105, 180, 0.7); /* Hot Pink Glow */
+            --color-container-shadow-inset: rgba(0, 255, 255, 0.5); /* Cyan Inner Glow */
+
+            --color-button-gradient-start: #FF1493; /* DeepPink */
+            --color-button-gradient-end: #FF69B4;   /* HotPink */
+            --color-button-shadow-3d: #c21278; /* Darker pink for 3D effect */
+            --color-button-hover-start: #f0138a;
+            --color-button-hover-end: #f060a9;
+            
+            --color-stat-bg: rgba(255, 255, 255, 0.1);
+            --color-stat-shadow: rgba(0, 255, 255, 0.6); /* Cyan Glow for stats */
+            --color-stat-hover-shadow: rgba(255, 0, 255, 0.8); /* Pink Glow for stats hover */
+            
+            --color-input-bg: rgba(0, 0, 0, 0.35);
+            --color-input-border: rgba(255, 255, 255, 0.4);
+
+            --color-update-increase: #39FF14; /* Neon Green */
+            --color-update-decrease: #FFD700; /* Gold/Yellow */
+
+            --animation-duration-fast: 0.5s;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
+            color: var(--color-text-light);
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 650px;
+            width: 90%;
+            margin: auto;
+            background: var(--color-container-bg);
+            padding: 25px 30px;
+            border-radius: 25px;
+            box-shadow: 0 0 30px var(--color-container-shadow-main),
+                        0 0 20px var(--color-container-shadow-inset) inset;
+            backdrop-filter: blur(12px);
+            border: 2px solid var(--color-container-border);
+        }
+
+        h2 {
+            font-size: 42px; /* Larger, more impactful */
+            text-shadow: 3px 3px 0px #003366, /* Darker blue outline */
+                         5px 5px 0px var(--color-button-gradient-start); /* Pink shadow offset */
+            margin-bottom: 30px;
+            letter-spacing: 1.5px;
+            line-height: 1.2;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px; /* Spacing between stat boxes */
+        }
+
+        .stats div {
+            font-size: 30px; /* Base size for icon */
+            padding: 15px;
+            background: var(--color-stat-bg);
+            border-radius: 15px;
+            box-shadow: 0 0 12px var(--color-stat-shadow);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), /* Bouncy hover */
+                        box-shadow 0.25s ease-in-out;
+            min-width: 140px; /* Ensure items don't get too small */
+            flex: 1; /* Allow flex items to grow and shrink */
+            min-width: calc(50% - 20px); /* Try to fit two per row on smaller views */
+            max-width: 160px; /* Max width for stat items */
+        }
+
+        .stats div:hover {
+            transform: scale(1.12);
+            box-shadow: 0 0 22px var(--color-stat-hover-shadow), 
+                        0 0 10px rgba(255, 255, 255, 0.3) inset;
+        }
+
+        .stats p { /* Label like "Views", "Likes" */
+            font-size: 18px;
+            margin: 8px 0 5px 0;
+            font-weight: bold;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stats div p:last-of-type { /* The number itself */
+            font-size: 34px;
+            font-weight: bold;
+            color: var(--color-text-light);
+            line-height: 1;
+            min-height: 34px; /* Prevent layout shift during count */
+        }
+
+        .info {
+            font-size: 19px;
+            margin: 15px 0;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+        .info strong {
+            color: var(--color-text-light);
+        }
+
+        img#cover {
+            width: 200px; /* Increased size */
+            height: 200px;
+            border-radius: 20px; /* More rounded */
+            margin-top: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 18px rgba(0, 255, 255, 0.7), 0 0 30px rgba(255, 0, 255, 0.5);
+            border: 4px solid var(--color-text-light);
+            transition: transform 0.35s ease-in-out;
+        }
+        img#cover:hover {
+            transform: scale(1.07) rotate(3deg); /* Playful hover */
+        }
+
+        a, button {
+            display: block;
+            margin: 15px auto;
+            padding: 18px 15px;
+            background: linear-gradient(135deg, var(--color-button-gradient-start), var(--color-button-gradient-end));
+            color: var(--color-text-light);
+            text-decoration: none;
+            border-radius: 14px; /* Chunky buttons */
+            font-weight: bold;
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, background 0.2s ease;
+            width: 88%;
+            text-align: center;
+            font-size: 22px;
+            border: none; /* Remove default border */
+            outline: none;
+            cursor: pointer;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 0 var(--color-button-shadow-3d), /* 3D effect */
+                        0 8px 18px rgba(255, 0, 255, 0.4);
+            letter-spacing: 0.5px;
+        }
+
+        a:hover, button:hover {
+            transform: scale(1.03) translateY(-3px); /* Slight lift and scale */
+            box-shadow: 0 7px 0 var(--color-button-shadow-3d), /* Adjusted 3D effect */
+                        0 10px 22px rgba(255, 0, 255, 0.7);
+            background: linear-gradient(135deg, var(--color-button-hover-start), var(--color-button-hover-end));
+        }
+        a:active, button:active {
+            transform: scale(0.98) translateY(1px); /* Press down effect */
+            box-shadow: 0 3px 0 var(--color-button-shadow-3d),
+                        0 5px 12px rgba(255, 0, 255, 0.5);
+        }
+
+        input[type="text"] {
+            width: calc(88% - 34px); /* Adjust for padding */
+            padding: 16px;
+            border-radius: 14px;
+            border: none; 
+            outline: none;
+            background: var(--color-input-bg);
+            color: var(--color-text-light);
+            text-align: center;
+            font-size: 20px;
+            font-family: var(--font-primary);
+            margin-bottom: 15px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+            border: 2px solid var(--color-input-border);
+        }
+        input[type="text"]::placeholder {
+            color: rgba(255,255,255,0.5);
+            font-family: var(--font-primary);
+        }
+
+        #statsContainer {
+            display: none;
+            animation: fadeInStats 0.7s ease-out forwards;
+        }
+
+        @keyframes fadeInStats {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .stat-value-changing { /* Applied to the <p> holding the number */
+            animation: valueUpdateEffect var(--animation-duration-fast) ease-in-out;
+            display: inline-block; /* Helps with transform behaving as expected */
+        }
+
+        @keyframes valueUpdateEffect {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.35); /* More pop */
+                color: var(--dynamic-update-color, var(--color-button-gradient-start)); /* Use dynamic color */
+                text-shadow: 0 0 10px var(--dynamic-update-color, var(--color-button-gradient-start));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📊 TikTok Turbo Stats 🎮</h2>
+        <input type="text" id="videoUrl" placeholder="Paste TikTok Video URL Here!">
+        <button id="searchButton" onclick="startFetchingData()">🚀 Get Video Stats!</button>
+        
+        <div id="statsContainer">
+            <img id="cover" src="" alt="Video Cover">
+            <p class="info"><strong>Creator:</strong> <span id="creator">-</span></p>
+            <p class="info"><strong>Description:</strong> <span id="desc">-</span></p>
+            <p class="info"><strong>Date:</strong> <span id="date">-</span></p>
+
+            <div class="stats">
+                <div>👁️ <p>Views</p><p id="views">0</p></div>
+                <div>❤️ <p>Likes</p><p id="likes">0</p></div>
+                <div>🔄 <p>Shares</p><p id="shares">0</p></div>
+                <div>💬 <p>Comments</p><p id="comments">0</p></div>
+            </div>
+
+            <p class="info"><strong>🎵 Music:</strong> <span id="music_title">-</span> by <span id="music_artist">-</span></p>
+            <button id="playButton" onclick="playMusic()">▶️ Play Music</button>
+            <a id="downloadMP3" href="#" target="_blank" style="display: none;">🎶 Download MP3</a> <a id="download" href="#" target="_blank" style="display: none;">⬇️ Download Video</a> </div>
+    </div>
+
+    <script>
+        let lastStats = { views: 0, likes: 0, shares: 0, comments: 0 };
+        let intervalId;
+        let musicAudio = null;
+        const API_BASE_URL = 'https://countik.com/api/videoinfo/'; // Using a more reliable API if possible, or proxying
+                                                                  // Note: Direct use of countik.com might have CORS or rate limit issues in a live environment.
+                                                                  // For testing, this should work if their API is open.
+        const ANIMATION_DURATION_MS = 500; // Corresponds to CSS animation .stat-value-changing
+
+        function animateCounter(element, target, previous) {
+            target = Number(target) || 0;
+            previous = Number(previous) || 0;
+
+            if (target !== previous) {
+                element.classList.add('stat-value-changing');
+                if (target > previous) {
+                    element.style.setProperty('--dynamic-update-color', 'var(--color-update-increase)');
+                } else {
+                    element.style.setProperty('--dynamic-update-color', 'var(--color-update-decrease)');
+                }
+
+                setTimeout(() => {
+                    element.classList.remove('stat-value-changing');
+                    element.style.removeProperty('--dynamic-update-color');
+                }, ANIMATION_DURATION_MS);
+
+                let current = previous;
+                const steps = 30; // Number of animation steps for the counter
+                const durationPerStep = Math.max(15, (ANIMATION_DURATION_MS - 50) / steps); // Ensure at least 15ms per step
+                const increment = (target - previous) / steps;
+
+                if (element.animationInterval) {
+                    clearInterval(element.animationInterval);
+                }
+
+                let stepCount = 0;
+                element.animationInterval = setInterval(() => {
+                    current += increment;
+                    stepCount++;
+
+                    if ((increment > 0 && current >= target) || (increment < 0 && current <= target) || stepCount >= steps) {
+                        current = target;
+                        clearInterval(element.animationInterval);
+                        element.animationInterval = null;
+                    }
+                    element.innerText = Math.round(current).toLocaleString();
+                }, durationPerStep);
+
+            } else {
+                element.innerText = target.toLocaleString();
+            }
+        }
+
+        async function fetchVideoData() {
+            const urlInput = document.getElementById('videoUrl').value;
+            const match = urlInput.match(/video\/(\d+)/);
+            if (!match) {
+                alert('Invalid TikTok URL. Please paste a valid video link!');
+                // Optionally, stop further fetching if URL is invalid after first attempt
+                // if (intervalId) stopFetchingData(); 
+                return;
+            }
+            const videoId = match[1];
+            
+            document.getElementById('searchButton').innerText = '⏳ Fetching...';
+            document.getElementById('searchButton').disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${videoId}`);
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (data) { // Check if data is not null or undefined
+                  displayData(data);
+                } else {
+                  throw new Error('Empty data received from API');
+                }
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('Could not fetch video data. The API might be down or the video is unavailable. Please try again later.');
+                // Optionally stop interval on persistent error
+                // stopFetchingData();
+            } finally {
+                 document.getElementById('searchButton').innerText = '🚀 Get Video Stats!';
+                 document.getElementById('searchButton').disabled = false;
+            }
+        }
+
+        function displayData(data) {
+            // Stop any currently playing music from a previous video
+            if (musicAudio && !musicAudio.paused) {
+                musicAudio.pause();
+                musicAudio.currentTime = 0;
+            }
+            musicAudio = null; // Reset musicAudio for the new video
+            document.getElementById('playButton').innerText = '▶️ Play Music';
+
+
+            document.getElementById('statsContainer').style.display = 'block';
+            document.getElementById('creator').innerText = data.creator || 'N/A';
+            document.getElementById('desc').innerText = data.desc || 'No description';
+            document.getElementById('date').innerText = data.create_date || 'Unknown date';
+            document.getElementById('cover').src = data.cover || 'placeholder.png'; // Add a placeholder image URL if desired
+
+            const downloadLink = document.getElementById('download');
+            const downloadMP3Link = document.getElementById('downloadMP3');
+
+            if(data.download_link){
+                downloadLink.href = data.download_link;
+                downloadLink.style.display = 'block';
+            } else {
+                downloadLink.style.display = 'none';
+            }
+
+            if(data.music_play_url) {
+                document.getElementById('music_title').innerText = data.music_title || 'Unknown Title';
+                document.getElementById('music_artist').innerText = data.music_artist || 'Unknown Artist';
+                downloadMP3Link.href = data.music_play_url;
+                downloadMP3Link.style.display = 'block';
+                document.getElementById('playButton').style.display = 'block';
+                document.querySelector('.info strong:contains("Music")').parentElement.style.display = 'block';
+
+
+            } else {
+                document.getElementById('music_title').innerText = 'N/A';
+                document.getElementById('music_artist').innerText = '';
+                downloadMP3Link.style.display = 'none';
+                document.getElementById('playButton').style.display = 'none';
+                // Hide music info section if no music URL
+                const musicInfoElement = Array.from(document.querySelectorAll('.info strong')).find(el => el.textContent.includes('Music:'));
+                if (musicInfoElement) musicInfoElement.parentElement.style.display = 'none';
+            }
+            
+
+            animateCounter(document.getElementById('views'), data.plays, lastStats.views);
+            animateCounter(document.getElementById('likes'), data.likes, lastStats.likes);
+            animateCounter(document.getElementById('shares'), data.shares, lastStats.shares);
+            animateCounter(document.getElementById('comments'), data.comments, lastStats.comments);
+
+            lastStats.views = Number(data.plays) || 0;
+            lastStats.likes = Number(data.likes) || 0;
+            lastStats.shares = Number(data.shares) || 0;
+            lastStats.comments = Number(data.comments) || 0;
+        }
+
+        function startFetchingData() {
+            if (intervalId) { // Clear previous interval if any
+                clearInterval(intervalId);
+            }
+            fetchVideoData(); // Fetch immediately
+            intervalId = setInterval(fetchVideoData, 10000); // Then every 10 seconds
+        }
+
+        function stopFetchingData() {
+            clearInterval(intervalId);
+            intervalId = null;
+        }
+
+        function playMusic() {
+            const musicUrl = document.getElementById('downloadMP3').href;
+            const playButton = document.getElementById('playButton');
+
+            if (!musicUrl || musicUrl === '#') { // Check if a valid URL is present
+                alert("No music URL available for this video.");
+                return;
+            }
+
+            if (musicAudio && !musicAudio.paused) {
+                musicAudio.pause();
+                musicAudio.currentTime = 0; 
+                playButton.innerText = "▶️ Play Music";
+            } else {
+                if (!musicAudio || musicAudio.src !== musicUrl) { // Create new Audio object if it's null or URL changed
+                    musicAudio = new Audio(musicUrl);
+                }
+                musicAudio.play().then(() => {
+                    playButton.innerText = "⏹️ Stop Music";
+                }).catch(error => {
+                    console.error("Error playing music:", error);
+                    alert("Could not play music. The audio format might not be supported or the link is broken.");
+                    playButton.innerText = "▶️ Play Music"; // Reset button
+                });
+            }
+        }
+
+        // Helper to find element by text content for hiding music info more robustly
+        // (Used in displayData)
+        if (!Element.prototype.matches) { // Polyfill for older browsers if needed
+            Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
+        }
+        if (!Element.prototype.closest) { // Polyfill for older browsers if needed
+            Element.prototype.closest = function(s) {
+                var el = this;
+                do {
+                    if (Element.prototype.matches.call(el, s)) return el;
+                    el = el.parentElement || el.parentNode;
+                } while (el !== null && el.nodeType === 1);
+                return null;
+            };
+        }
+    </script>
+</body>
+</html>
