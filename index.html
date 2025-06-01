@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🚀 TikTok Turbo Stats 🎮</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
+    <style>
         @import url('https://fonts.cdnfonts.com/css/burbank-big-condensed');
 
         :root {
@@ -49,6 +49,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            box-sizing: border-box;
         }
         
         .container {
@@ -65,7 +66,7 @@
         }
 
         h2 {
-            font-size: 42px; /* Larger, more impactful */
+            font-size: 38px; /* Slightly adjusted for responsiveness */
             text-shadow: 3px 3px 0px #003366, /* Darker blue outline */
                          5px 5px 0px var(--color-button-gradient-start); /* Pink shadow offset */
             margin-bottom: 30px;
@@ -83,17 +84,17 @@
         }
 
         .stats div {
-            font-size: 30px; /* Base size for icon */
+            font-size: 28px; /* Base size for icon */
             padding: 15px;
             background: var(--color-stat-bg);
             border-radius: 15px;
             box-shadow: 0 0 12px var(--color-stat-shadow);
             transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), /* Bouncy hover */
                         box-shadow 0.25s ease-in-out;
-            min-width: 140px; /* Ensure items don't get too small */
-            flex: 1; /* Allow flex items to grow and shrink */
-            min-width: calc(50% - 20px); /* Try to fit two per row on smaller views */
-            max-width: 160px; /* Max width for stat items */
+            flex-basis: calc(50% - 20px); /* Try to fit two per row, accounting for gap */
+            min-width: 130px; /* Ensure items don't get too small */
+            max-width: 160px;
+            box-sizing: border-box;
         }
 
         .stats div:hover {
@@ -103,7 +104,7 @@
         }
 
         .stats p { /* Label like "Views", "Likes" */
-            font-size: 18px;
+            font-size: 16px; /* Slightly smaller for better fit */
             margin: 8px 0 5px 0;
             font-weight: bold;
             color: var(--color-text-secondary);
@@ -111,32 +112,35 @@
             letter-spacing: 0.5px;
         }
         .stats div p:last-of-type { /* The number itself */
-            font-size: 34px;
+            font-size: 30px; /* Slightly smaller for better fit */
             font-weight: bold;
             color: var(--color-text-light);
             line-height: 1;
-            min-height: 34px; /* Prevent layout shift during count */
+            min-height: 30px; /* Prevent layout shift during count */
+            word-break: break-all; /* Prevent long numbers from breaking layout */
         }
 
         .info {
-            font-size: 19px;
+            font-size: 18px; /* Adjusted for readability */
             margin: 15px 0;
             color: var(--color-text-secondary);
-            line-height: 1.6;
+            line-height: 1.5;
+            word-break: break-word;
         }
         .info strong {
             color: var(--color-text-light);
         }
 
         img#cover {
-            width: 200px; /* Increased size */
-            height: 200px;
-            border-radius: 20px; /* More rounded */
+            width: 180px; 
+            height: 180px;
+            border-radius: 20px; 
             margin-top: 15px;
             margin-bottom: 10px;
             box-shadow: 0 0 18px rgba(0, 255, 255, 0.7), 0 0 30px rgba(255, 0, 255, 0.5);
             border: 4px solid var(--color-text-light);
             transition: transform 0.35s ease-in-out;
+            object-fit: cover;
         }
         img#cover:hover {
             transform: scale(1.07) rotate(3deg); /* Playful hover */
@@ -145,7 +149,7 @@
         a, button {
             display: block;
             margin: 15px auto;
-            padding: 18px 15px;
+            padding: 16px 15px; /* Slightly adjusted padding */
             background: linear-gradient(135deg, var(--color-button-gradient-start), var(--color-button-gradient-end));
             color: var(--color-text-light);
             text-decoration: none;
@@ -154,42 +158,44 @@
             transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, background 0.2s ease;
             width: 88%;
             text-align: center;
-            font-size: 22px;
-            border: none; /* Remove default border */
+            font-size: 20px; /* Adjusted font size */
+            border: none; 
             outline: none;
             cursor: pointer;
             text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
             box-shadow: 0 5px 0 var(--color-button-shadow-3d), /* 3D effect */
                         0 8px 18px rgba(255, 0, 255, 0.4);
             letter-spacing: 0.5px;
+            box-sizing: border-box;
         }
 
         a:hover, button:hover {
-            transform: scale(1.03) translateY(-3px); /* Slight lift and scale */
-            box-shadow: 0 7px 0 var(--color-button-shadow-3d), /* Adjusted 3D effect */
+            transform: scale(1.03) translateY(-3px); 
+            box-shadow: 0 7px 0 var(--color-button-shadow-3d), 
                         0 10px 22px rgba(255, 0, 255, 0.7);
             background: linear-gradient(135deg, var(--color-button-hover-start), var(--color-button-hover-end));
         }
         a:active, button:active {
-            transform: scale(0.98) translateY(1px); /* Press down effect */
+            transform: scale(0.98) translateY(1px); 
             box-shadow: 0 3px 0 var(--color-button-shadow-3d),
                         0 5px 12px rgba(255, 0, 255, 0.5);
         }
 
         input[type="text"] {
-            width: calc(88% - 34px); /* Adjust for padding */
-            padding: 16px;
+            width: calc(88% - 32px); /* Adjust for padding and border */
+            padding: 15px; /* Adjusted padding */
             border-radius: 14px;
             border: none; 
             outline: none;
             background: var(--color-input-bg);
             color: var(--color-text-light);
             text-align: center;
-            font-size: 20px;
+            font-size: 18px; /* Adjusted font size */
             font-family: var(--font-primary);
             margin-bottom: 15px;
             box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
             border: 2px solid var(--color-input-border);
+            box-sizing: border-box;
         }
         input[type="text"]::placeholder {
             color: rgba(255,255,255,0.5);
@@ -208,7 +214,7 @@
         
         .stat-value-changing { /* Applied to the <p> holding the number */
             animation: valueUpdateEffect var(--animation-duration-fast) ease-in-out;
-            display: inline-block; /* Helps with transform behaving as expected */
+            display: inline-block; 
         }
 
         @keyframes valueUpdateEffect {
@@ -216,11 +222,54 @@
                 transform: scale(1);
             }
             50% {
-                transform: scale(1.35); /* More pop */
-                color: var(--dynamic-update-color, var(--color-button-gradient-start)); /* Use dynamic color */
+                transform: scale(1.35); 
+                color: var(--dynamic-update-color, var(--color-button-gradient-start)); 
                 text-shadow: 0 0 10px var(--dynamic-update-color, var(--color-button-gradient-start));
             }
         }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            h2 {
+                font-size: 30px;
+            }
+            .stats div {
+                flex-basis: calc(50% - 10px); /* Adjust for smaller screens */
+                min-width: 120px;
+                font-size: 24px; /* Icon size */
+            }
+            .stats p {
+                font-size: 14px;
+            }
+            .stats div p:last-of-type {
+                font-size: 26px;
+            }
+            img#cover {
+                width: 150px;
+                height: 150px;
+            }
+            a, button {
+                font-size: 18px;
+                padding: 14px 12px;
+            }
+            input[type="text"] {
+                font-size: 16px;
+                padding: 12px;
+            }
+            .info {
+                font-size: 16px;
+            }
+        }
+        @media (max-width: 400px) {
+            .stats div {
+                flex-basis: 100%; /* Stack stat items on very small screens */
+                max-width: none;
+            }
+            h2 {
+                font-size: 26px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -230,8 +279,7 @@
         <button id="searchButton" onclick="startFetchingData()">🚀 Get Video Stats!</button>
         
         <div id="statsContainer">
-            <img id="cover" src="" alt="Video Cover">
-            <p class="info"><strong>Creator:</strong> <span id="creator">-</span></p>
+            <img id="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Video Cover"> <p class="info"><strong>Creator:</strong> <span id="creator">-</span></p>
             <p class="info"><strong>Description:</strong> <span id="desc">-</span></p>
             <p class="info"><strong>Date:</strong> <span id="date">-</span></p>
 
@@ -242,19 +290,19 @@
                 <div>💬 <p>Comments</p><p id="comments">0</p></div>
             </div>
 
-            <p class="info"><strong>🎵 Music:</strong> <span id="music_title">-</span> by <span id="music_artist">-</span></p>
-            <button id="playButton" onclick="playMusic()">▶️ Play Music</button>
-            <a id="downloadMP3" href="#" target="_blank" style="display: none;">🎶 Download MP3</a> <a id="download" href="#" target="_blank" style="display: none;">⬇️ Download Video</a> </div>
+            <p class="info" id="musicInfoSection"><strong>🎵 Music:</strong> <span id="music_title">-</span> by <span id="music_artist">-</span></p>
+            <button id="playButton" onclick="playMusic()" style="display: none;">▶️ Play Music</button>
+            <a id="downloadMP3" href="#" target="_blank" style="display: none;">🎶 Download MP3</a>
+            <a id="download" href="#" target="_blank" style="display: none;">⬇️ Download Video</a>
+        </div>
     </div>
 
     <script>
         let lastStats = { views: 0, likes: 0, shares: 0, comments: 0 };
         let intervalId;
         let musicAudio = null;
-        const API_BASE_URL = 'https://countik.com/api/videoinfo/'; // Using a more reliable API if possible, or proxying
-                                                                  // Note: Direct use of countik.com might have CORS or rate limit issues in a live environment.
-                                                                  // For testing, this should work if their API is open.
-        const ANIMATION_DURATION_MS = 500; // Corresponds to CSS animation .stat-value-changing
+        const API_BASE_URL = 'https://countik.com/api/videoinfo/'; 
+        const ANIMATION_DURATION_MS = 500; 
 
         function animateCounter(element, target, previous) {
             target = Number(target) || 0;
@@ -274,8 +322,8 @@
                 }, ANIMATION_DURATION_MS);
 
                 let current = previous;
-                const steps = 30; // Number of animation steps for the counter
-                const durationPerStep = Math.max(15, (ANIMATION_DURATION_MS - 50) / steps); // Ensure at least 15ms per step
+                const steps = 30; 
+                const durationPerStep = Math.max(15, (ANIMATION_DURATION_MS - 50) / steps); 
                 const increment = (target - previous) / steps;
 
                 if (element.animationInterval) {
@@ -305,57 +353,55 @@
             const match = urlInput.match(/video\/(\d+)/);
             if (!match) {
                 alert('Invalid TikTok URL. Please paste a valid video link!');
-                // Optionally, stop further fetching if URL is invalid after first attempt
-                // if (intervalId) stopFetchingData(); 
                 return;
             }
             const videoId = match[1];
             
-            document.getElementById('searchButton').innerText = '⏳ Fetching...';
-            document.getElementById('searchButton').disabled = true;
+            const searchButton = document.getElementById('searchButton');
+            searchButton.innerText = '⏳ Fetching...';
+            searchButton.disabled = true;
 
             try {
                 const response = await fetch(`${API_BASE_URL}${videoId}`);
                 if (!response.ok) {
-                    throw new Error(`API request failed with status ${response.status}`);
+                    const errorData = await response.text(); // Try to get more error info
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}. Response: ${errorData}`);
                 }
                 const data = await response.json();
 
-                if (data) { // Check if data is not null or undefined
+                if (data && data.status !== 'error') { 
                   displayData(data);
                 } else {
-                  throw new Error('Empty data received from API');
+                  throw new Error(data.message || 'Empty or error data received from API');
                 }
 
             } catch (error) {
                 console.error('Error fetching data:', error);
-                alert('Could not fetch video data. The API might be down or the video is unavailable. Please try again later.');
-                // Optionally stop interval on persistent error
-                // stopFetchingData();
+                alert(`Could not fetch video data. ${error.message}. Please try again later.`);
             } finally {
-                 document.getElementById('searchButton').innerText = '🚀 Get Video Stats!';
-                 document.getElementById('searchButton').disabled = false;
+                 searchButton.innerText = '🚀 Get Video Stats!';
+                 searchButton.disabled = false;
             }
         }
 
         function displayData(data) {
-            // Stop any currently playing music from a previous video
             if (musicAudio && !musicAudio.paused) {
                 musicAudio.pause();
                 musicAudio.currentTime = 0;
             }
-            musicAudio = null; // Reset musicAudio for the new video
+            musicAudio = null; 
             document.getElementById('playButton').innerText = '▶️ Play Music';
-
 
             document.getElementById('statsContainer').style.display = 'block';
             document.getElementById('creator').innerText = data.creator || 'N/A';
             document.getElementById('desc').innerText = data.desc || 'No description';
             document.getElementById('date').innerText = data.create_date || 'Unknown date';
-            document.getElementById('cover').src = data.cover || 'placeholder.png'; // Add a placeholder image URL if desired
+            document.getElementById('cover').src = data.cover || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
             const downloadLink = document.getElementById('download');
             const downloadMP3Link = document.getElementById('downloadMP3');
+            const playButton = document.getElementById('playButton');
+            const musicInfoSection = document.getElementById('musicInfoSection');
 
             if(data.download_link){
                 downloadLink.href = data.download_link;
@@ -364,26 +410,20 @@
                 downloadLink.style.display = 'none';
             }
 
-            if(data.music_play_url) {
+            if(data.music_play_url && data.music_title) { // Ensure title exists too for music section
                 document.getElementById('music_title').innerText = data.music_title || 'Unknown Title';
                 document.getElementById('music_artist').innerText = data.music_artist || 'Unknown Artist';
                 downloadMP3Link.href = data.music_play_url;
+                
+                musicInfoSection.style.display = 'block';
                 downloadMP3Link.style.display = 'block';
-                document.getElementById('playButton').style.display = 'block';
-                document.querySelector('.info strong:contains("Music")').parentElement.style.display = 'block';
-
-
+                playButton.style.display = 'block';
             } else {
-                document.getElementById('music_title').innerText = 'N/A';
-                document.getElementById('music_artist').innerText = '';
+                musicInfoSection.style.display = 'none';
                 downloadMP3Link.style.display = 'none';
-                document.getElementById('playButton').style.display = 'none';
-                // Hide music info section if no music URL
-                const musicInfoElement = Array.from(document.querySelectorAll('.info strong')).find(el => el.textContent.includes('Music:'));
-                if (musicInfoElement) musicInfoElement.parentElement.style.display = 'none';
+                playButton.style.display = 'none';
             }
             
-
             animateCounter(document.getElementById('views'), data.plays, lastStats.views);
             animateCounter(document.getElementById('likes'), data.likes, lastStats.likes);
             animateCounter(document.getElementById('shares'), data.shares, lastStats.shares);
@@ -396,14 +436,14 @@
         }
 
         function startFetchingData() {
-            if (intervalId) { // Clear previous interval if any
+            if (intervalId) { 
                 clearInterval(intervalId);
             }
-            fetchVideoData(); // Fetch immediately
-            intervalId = setInterval(fetchVideoData, 10000); // Then every 10 seconds
+            fetchVideoData(); 
+            intervalId = setInterval(fetchVideoData, 10000); 
         }
 
-        function stopFetchingData() {
+        function stopFetchingData() { // This function is available if needed, e.g., for a stop button
             clearInterval(intervalId);
             intervalId = null;
         }
@@ -412,17 +452,17 @@
             const musicUrl = document.getElementById('downloadMP3').href;
             const playButton = document.getElementById('playButton');
 
-            if (!musicUrl || musicUrl === '#') { // Check if a valid URL is present
+            if (!musicUrl || musicUrl === window.location.href + '#') { // More robust check for empty href
                 alert("No music URL available for this video.");
                 return;
             }
 
             if (musicAudio && !musicAudio.paused) {
                 musicAudio.pause();
-                musicAudio.currentTime = 0; 
+                // musicAudio.currentTime = 0; // Not strictly needed if creating new audio object or reusing.
                 playButton.innerText = "▶️ Play Music";
             } else {
-                if (!musicAudio || musicAudio.src !== musicUrl) { // Create new Audio object if it's null or URL changed
+                if (!musicAudio || musicAudio.src !== musicUrl) { 
                     musicAudio = new Audio(musicUrl);
                 }
                 musicAudio.play().then(() => {
@@ -430,25 +470,15 @@
                 }).catch(error => {
                     console.error("Error playing music:", error);
                     alert("Could not play music. The audio format might not be supported or the link is broken.");
-                    playButton.innerText = "▶️ Play Music"; // Reset button
+                    playButton.innerText = "▶️ Play Music"; 
                 });
-            }
-        }
 
-        // Helper to find element by text content for hiding music info more robustly
-        // (Used in displayData)
-        if (!Element.prototype.matches) { // Polyfill for older browsers if needed
-            Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
-        }
-        if (!Element.prototype.closest) { // Polyfill for older browsers if needed
-            Element.prototype.closest = function(s) {
-                var el = this;
-                do {
-                    if (Element.prototype.matches.call(el, s)) return el;
-                    el = el.parentElement || el.parentNode;
-                } while (el !== null && el.nodeType === 1);
-                return null;
-            };
+                // Event listener to reset button when music ends
+                musicAudio.onended = function() {
+                    playButton.innerText = "▶️ Play Music";
+                    musicAudio.currentTime = 0; // Reset for next play
+                };
+            }
         }
     </script>
 </body>
