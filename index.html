@@ -38,7 +38,7 @@
             --color-update-increase: #39FF14; /* Neon Green */
             --color-update-decrease: #FFD700; /* Gold/Yellow */
             --progress-bar-gradient-start: var(--color-update-decrease);
-            --progress-bar-gradient-end: var(--color-update-increase);
+ --progress-bar-gradient-end: var(--color-update-increase);
 
 
             --animation-duration-fast: 0.5s;
@@ -92,10 +92,10 @@
         }
 
         h2 {
-            font-size: 40px; 
+ font-size: 40px; 
             margin-bottom: 35px;
             letter-spacing: 1.5px;
-            line-height: 1.2;
+ line-height: 1.2;
             font-weight: 700; /* Bolder font if available */
             text-shadow: 3px 3px 0px #333, /* Darker, more defined shadow */
                          0 0 15px rgba(255,255,255,0.3); /* Soft white aura */
@@ -111,14 +111,14 @@
         }
 
         input[type="text"] {
-            width: calc(90% - 32px); 
-            padding: 16px; 
+ width: calc(90% - 32px); 
+ padding: 16px; 
             border-radius: 16px; /* More rounded */
             border: 2px solid var(--color-input-border);
             outline: none;
             background: var(--color-input-bg);
             color: var(--color-text-light);
-            text-align: center;
+ text-align: center;
             font-size: 18px; 
             font-family: var(--font-primary);
             margin-bottom: 20px; /* Increased margin */
@@ -136,14 +136,14 @@
 
 
         .progress-bar-wrapper {
-            margin: 25px auto 20px auto; 
+ margin: 25px auto 20px auto; 
             width: 90%;
         }
         .progress-bar-label {
-            font-size: 17px; /* Slightly larger */
+ font-size: 17px; /* Slightly larger */
             color: var(--color-text-secondary);
             margin-bottom: 10px; /* Increased space */
-            text-align: left;
+ text-align: left;
             font-family: var(--font-primary);
             letter-spacing: 0.5px;
             font-weight: bold;
@@ -151,7 +151,7 @@
         .progress-bar-container {
             width: 100%;
             height: 14px; /* Thicker bar */
-            background-color: rgba(0, 0, 0, 0.5); /* Darker */
+ background-color: rgba(0, 0, 0, 0.5); /* Darker */
             border-radius: 7px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.25); 
@@ -160,7 +160,7 @@
         .progress-bar-fill {
             height: 100%;
             width: 0%; 
-            background: linear-gradient(90deg, var(--progress-bar-gradient-start), var(--progress-bar-gradient-end)); 
+ background: linear-gradient(90deg, var(--progress-bar-gradient-start), var(--progress-bar-gradient-end)); 
             border-radius: 6px; 
             /* transition set by JS */
             box-shadow: 0 0 8px var(--progress-bar-gradient-end), /* Glow from the fill color */
@@ -171,7 +171,7 @@
 
         a, button {
             display: block;
-            margin: 18px auto; /* Increased margin */
+ margin: 18px auto; /* Increased margin */
             padding: 18px 15px; 
             background: linear-gradient(135deg, var(--color-button-gradient-start), var(--color-button-gradient-end));
             color: var(--color-text-light);
@@ -179,7 +179,7 @@
             border-radius: 16px; 
             font-weight: bold;
             width: 90%;
-            text-align: center;
+ text-align: center;
             font-size: 21px; 
             border: none; 
             outline: none;
@@ -225,7 +225,7 @@
 
         #statsContainer {
             display: none;
-            animation: fadeInStats 0.8s ease-out forwards;
+ animation: fadeInStats 0.8s ease-out forwards;
             margin-top: 20px; /* Space above stats */
         }
         @keyframes fadeInStats {
@@ -234,13 +234,13 @@
         }
         
         img#cover {
-            width: 190px; 
+ width: 190px; 
             height: 190px;
             border-radius: 22px; 
             margin-top: 20px;
             margin-bottom: 15px;
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.75), 0 0 35px rgba(255, 0, 255, 0.55);
-            border: 5px solid var(--color-text-light); /* Thicker border */
+ border: 5px solid var(--color-text-light); /* Thicker border */
             transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
             object-fit: cover;
         }
@@ -251,7 +251,7 @@
 
         .info {
             font-size: 19px; 
-            margin: 18px 0;
+ margin: 18px 0;
             color: var(--color-text-secondary);
             line-height: 1.6;
             word-break: break-word;
@@ -263,10 +263,10 @@
 
         .stats {
             display: flex;
-            justify-content: space-around;
+ justify-content: space-around;
             margin-top: 30px; /* More space */
             margin-bottom: 20px;
-            flex-wrap: wrap;
+ flex-wrap: wrap;
             gap: 18px; /* Slightly more gap */
         }
 
@@ -274,10 +274,10 @@
             font-size: 30px; 
             padding: 18px; /* More padding */
             background: var(--color-stat-bg);
-            border-radius: 18px; /* More rounded */
+ border-radius: 18px; /* More rounded */
             box-shadow: 0 0 14px var(--color-stat-shadow), inset 0 0 8px rgba(0,0,0,0.3); /* Added inset shadow */
             transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), /* Different bounce */
-                        box-shadow 0.28s ease-in-out;
+ box-shadow 0.28s ease-in-out;
             flex-basis: calc(50% - 22px); 
             min-width: 135px; 
             max-width: 170px;
@@ -291,10 +291,10 @@
         }
 
         .stats p { 
-            font-size: 17px; 
+ font-size: 17px; 
             margin: 9px 0 6px 0;
             font-weight: bold;
-            color: var(--color-text-secondary);
+ color: var(--color-text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.7px; /* More spacing */
         }
@@ -302,7 +302,7 @@
             font-size: 32px; 
             font-weight: bold;
             color: var(--color-text-light);
-            line-height: 1;
+ line-height: 1;
             min-height: 32px; 
             word-break: break-all; 
         }
@@ -315,6 +315,57 @@
             0%, 100% { transform: scale(1) translateY(0); opacity: 1;}
             30% { transform: scale(1.1) translateY(-3px); opacity: 0.7;}
             60% { transform: scale(1.45) translateY(0px); opacity: 1; color: var(--dynamic-update-color, var(--color-button-gradient-start)); text-shadow: 0 0 12px var(--dynamic-update-color, var(--color-button-gradient-start));}
+        }
+
+
+        /* History Section */
+        #historyContainer {
+            display: none;
+            margin-top: 30px;
+            text-align: left;
+            animation: fadeInStats 0.8s ease-out forwards;
+        }
+        #historyContainer h3 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: var(--color-text-light);
+            text-shadow: 2px 2px 0px #333;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        #historyList {
+            list-style: none;
+            padding: 0;
+            max-height: 300px; /* Limit height */
+            overflow-y: auto; /* Add scrollbar */
+        }
+        #historyList li {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: var(--color-text-secondary);
+            line-height: 1.5;
+            word-break: break-word;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+        }
+        #historyList li strong {
+            color: var(--color-text-light);
+        }
+        #historyList li .timestamp {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* Chart Section (Placeholder) */
+        #chartContainer {
+            display: none; /* Initially hidden */
+            margin-top: 30px;
+            /* Add styling for your chart container */
         }
 
 
@@ -354,7 +405,7 @@
 
     </style>
 </head>
-<body>
+<body onload="loadHistory()">
     <div class="container">
         <h2>📊 TikTok Turbo Stats 🎮</h2>
         <input type="text" id="videoUrl" placeholder="Paste TikTok Video URL Here!">
@@ -384,12 +435,20 @@
             <a id="downloadMP3" href="#" target="_blank" style="display: none;">🎶 Download MP3</a>
             <a id="download" href="#" target="_blank" style="display: none;">⬇️ Download Video</a>
         </div>
+
+        <!-- History Section -->
+        <div id="historyContainer">
+            <h3>Update History</h3>
+            <ul id="historyList">
+                <!-- History items will be added here by JS -->
+            </ul>
+        </div>
     </div>
 
     <script>
         let lastStats = { views: 0, likes: 0, shares: 0, comments: 0 };
         let intervalId;
-        let musicAudio = null;
+ let musicAudio = null;
         const API_BASE_URL = 'https://countik.com/api/videoinfo/'; 
         const ANIMATION_DURATION_MS = 500; 
         const REFRESH_INTERVAL_MS = 10000; // 10 seconds
@@ -438,6 +497,7 @@
             }
         }
         
+        // Function to update the progress bar
         function updateProgressBar() {
             const progressBarFill = document.getElementById('refreshProgressBar');
             const progressBarWrapper = document.getElementById('progressBarWrapper');
@@ -455,6 +515,7 @@
             }
         }
 
+        // Function to fetch video data from the API
         async function fetchVideoData() {
             const urlInput = document.getElementById('videoUrl').value;
             const match = urlInput.match(/video\/(\d+)/);
@@ -478,8 +539,10 @@
                 }
                 const data = await response.json();
 
-                if (data && (data.status === 'success' || data.status === undefined) && data.creator) { // Check for success or if status is missing but data is present
+                // Check for success or if status is missing but data is present
+                if (data && (data.status === 'success' || data.status === undefined) && data.creator) { 
                   displayData(data);
+                  saveHistory(data); // Save history on successful fetch
                   return true; // Indicate success
                 } else {
                   throw new Error(data.message || 'Video not found or invalid data from API.');
@@ -490,13 +553,15 @@
                 alert(`Could not fetch video data. ${error.message}. Please check the URL or try again later.`);
                 document.getElementById('statsContainer').style.display = 'none'; // Hide stats on error
                 const progressBarWrapper = document.getElementById('progressBarWrapper');
-                if (progressBarWrapper) progressBarWrapper.style.display = 'none'; // Hide progress bar
+                if (progressBarWrapper) progressBarWrapper.style.display = 'none'; // Hide progress bar on error
+                document.getElementById('historyContainer').style.display = 'none'; // Hide history on error
                 return false; // Indicate failure
             } finally {
                  searchButton.innerText = '🚀 Get Video Stats!';
                  searchButton.disabled = false;
             }
         }
+
 
         function displayData(data) {
             if (musicAudio && !musicAudio.paused) {
@@ -510,6 +575,7 @@
             const progressBarWrapper = document.getElementById('progressBarWrapper');
             if (progressBarWrapper) { // Ensure progress bar is visible when stats are
                 progressBarWrapper.style.display = 'block';
+                document.getElementById('historyContainer').style.display = 'block'; // Show history when stats are shown
             }
 
             document.getElementById('creator').innerText = data.creator || 'N/A';
@@ -554,6 +620,7 @@
             lastStats.comments = Number(data.comments) || 0;
         }
 
+        // Function to start fetching data and set up the interval
         function startFetchingData() {
             const urlInput = document.getElementById('videoUrl').value;
             if (!urlInput.match(/video\/(\d+)/)) {
@@ -590,6 +657,7 @@
             });
         }
 
+        // Function to stop fetching data and clear the interval
         function stopFetchingData() { 
             if (intervalId) {
                 clearInterval(intervalId);
@@ -604,6 +672,7 @@
             }
         }
 
+        // Function to play or stop music
         function playMusic() {
             const musicUrl = document.getElementById('downloadMP3').href;
             const playButton = document.getElementById('playButton');
@@ -632,6 +701,97 @@
                     playButton.innerText = "▶️ Play Music"; 
                 });
             }
+        }
+
+        // --- History Functions ---
+        function saveHistory(newData) {
+            const historyList = document.getElementById('historyList');
+            const currentUrl = document.getElementById('videoUrl').value;
+            const historyKey = `tiktokStatsHistory_${currentUrl}`;
+            let history = JSON.parse(localStorage.getItem(historyKey)) || [];
+
+            const now = new Date();
+            const timestamp = now.toISOString();
+
+            let changes = [];
+            const previousData = history.length > 0 ? history[history.length - 1].data : null;
+
+            // Check for changes
+            if (previousData) {
+                if (newData.plays !== previousData.plays) {
+                    changes.push(`Views changed from ${previousData.plays.toLocaleString()} to ${newData.plays.toLocaleString()}`);
+                }
+                if (newData.likes !== previousData.likes) {
+                    changes.push(`Likes changed from ${previousData.likes.toLocaleString()} to ${newData.likes.toLocaleString()}`);
+                }
+                if (newData.shares !== previousData.shares) {
+                    changes.push(`Shares changed from ${previousData.shares.toLocaleString()} to ${newData.shares.toLocaleString()}`);
+                }
+                if (newData.comments !== previousData.comments) {
+                    changes.push(`Comments changed from ${previousData.comments.toLocaleString()} to ${newData.comments.toLocaleString()}`);
+                }
+                if (newData.desc !== previousData.desc) {
+                    changes.push(`Description updated.`);
+                }
+                if (newData.music_title !== previousData.music_title || newData.music_artist !== previousData.music_artist) {
+                     changes.push(`Music info updated.`);
+                }
+                // Add more checks for other fields if needed
+            } else {
+                // First entry for this video
+                changes.push(`Initial data recorded.`);
+            }
+
+            // Only add history entry if there are changes or it's the first entry
+            if (changes.length > 0) {
+                const historyEntry = {
+                    timestamp: timestamp,
+                    data: { // Store relevant data
+                        plays: newData.plays,
+                        likes: newData.likes,
+                        shares: newData.shares,
+                        comments: newData.comments,
+                        desc: newData.desc,
+                        music_title: newData.music_title,
+                        music_artist: newData.music_artist,
+                        // Add other fields you want to track
+                    },
+                    changes: changes // Store the list of changes
+                };
+
+                history.push(historyEntry);
+                localStorage.setItem(historyKey, JSON.stringify(history));
+                displayHistoryEntry(historyEntry); // Add the new entry to the displayed list
+            }
+        }
+
+        function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            const currentUrl = document.getElementById('videoUrl').value; // This will be empty on load
+            // History is loaded when a video URL is successfully fetched and displayed
+            // The saveHistory function handles displaying the history for the current video
+        }
+
+        function displayHistoryEntry(entry) {
+            const historyList = document.getElementById('historyList');
+            const listItem = document.createElement('li');
+
+            const timeAgo = timeSince(new Date(entry.timestamp));
+            listItem.innerHTML = `<strong>${timeAgo} ago:</strong> ${entry.changes.join(', ')}<span class="timestamp">${new Date(entry.timestamp).toLocaleString()}</span>`;
+            historyList.prepend(listItem); // Add to the top
+        }
+
+        // Helper function to format time ago
+        function timeSince(date) {
+            // Basic implementation - can be expanded for more detail
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return `${seconds} second${seconds === 1 ? '' : 's'}`;
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'}`;
+            const days = Math.floor(hours / 24);
+            return `${days} day${days === 1 ? '' : 's'}`;
         }
     </script>
 </body>
